@@ -32,6 +32,7 @@ std::string clean_token(const std::string &s)
 
 void tasm::assemble_line(const std::string &line)
 {
+	std::cout << "LINE: " << line << "\n";
 	// std::cout << "start/assemble_line/strel.done output: "
 	//          << labels.find("strlen.done")->second << std::endl;
 	std::istringstream iss(line);
@@ -486,6 +487,11 @@ void tasm::assemble_line(const std::string &line)
 	{
 		std::string arg;
 		iss >> arg;
+		if (labels.count(arg))
+		{
+			std::cout << labels.find(arg)->second;
+		}
+		std::cout << "\n";
 		uint8_t seg = 0;
 		uint16_t addr;
 		if (labels.count(arg))
@@ -637,13 +643,6 @@ void tasm::assemble_line(const std::string &line)
 		code_output.push_back(0x29);
 		code_output.push_back(offset);
 	}
-	// std::cout << "code size: " << code_output.size() << "\n";
-	// for (auto b : code_output)
-	// 	std::cout << std::hex << (int)b << " ";
-	// std::cout << "\n";
-	// std::cout << "end/assemble_line/strel.done output: " <<
-	// labels.find("strlen.done")->second
-	//           << std::endl;
 }
 
 void tasm::assemble_file(const std::string &path)
@@ -789,12 +788,20 @@ void tasm::assemble_file(const std::string &path)
 				// std::cout << " after=" << code_offset << "\n";
 			}
 			int sz = instruction_size(work);
-			// std::cout << "  INST: [" << work << "] size=" << sz
-			//	<< " code_offset=" << code_offset;
+			std::cout << "  INST: [" << work << "] size=" << sz
+			 		  << " code_offset=" << code_offset;
 			code_offset += sz;
-			// std::cout << " -> " << code_offset << "\n";
+			std::cout << " -> " << code_offset << "\n";
 		}
 	}
+
+	std::cout << "Labels: ";
+	for (auto &pair : labels)
+	{
+		std::cout << pair.first << "=" << pair.second << " ";
+	}
+	std::cout << "\n";
+
 	// std::cout << "strlen.done=" << labels.find("strlen.done")->second
 	// << " strlen.loop=" << labels.find("strlen.loop")->second<< "\n";
 	// std::cout << "AFTER PASS1: strlen.done=" <<
@@ -805,11 +812,6 @@ void tasm::assemble_file(const std::string &path)
 	// }
 	// std::cout << "\n";
 
-	// std::cout << "Labels: ";
-	// for (auto& pair : labels) {
-	// 	std::cout << pair.first << "=" << pair.second << " ";
-	// }
-	// std::cout << "\n";
 	auto labels_copy = labels;
 	// Второй проход: генерируем
 	data_output.clear();
@@ -855,7 +857,6 @@ void tasm::write_toru(const std::string &path)
 	std::ofstream file(path, std::ios::binary);
 	uint16_t dsize = data_output.size();
 	uint16_t csize = code_output.size();
-	// std::cout << "write_toru: dsize=" << dsize << " csize=" << csize << "\n";
 	file.put(dsize & 0xFF);
 	file.put(dsize >> 8);
 	file.put(csize & 0xFF);
@@ -867,11 +868,6 @@ void tasm::write_toru(const std::string &path)
 		file.put(byte);
 	for (uint8_t byte : code_output)
 		file.put(byte);
-	// std::cout << "code_output around start: ";
-	/// for (size_t i = 0; i < code_output.size(); i++) {
-	// 	std::cout << std::hex << (int)code_output[i] << " ";
-	// }
-	// std::cout << "\n";
 }
 int tasm::data_size(const std::string &line)
 {
@@ -1022,7 +1018,15 @@ int tasm::instruction_size(const std::string &line)
 	if (mnemonic == "HLT")
 		return 1;
 	if (mnemonic == "MOV")
-		return 4;
+	{
+		std::istringstream tmp(line);
+		std::string m, dst, src;
+		tmp >> m >> dst >> src;
+		src = clean_token(src);
+		if (regs.count(src))
+			return 3; // MOV reg, reg
+		return 4;	  // MOV reg, imm или MOV reg, label
+	}
 	if (mnemonic == "STOR")
 		return 4;
 	if (mnemonic == "LOAD")

@@ -1,0 +1,5 @@
+# ninja log v7
+7	444	8030865786790858	CMakeFiles/t16xe.dir/src/t16xe.cpp.obj	5362cf2a4d1001d9
+2	745	8030865786740847	CMakeFiles/t16xe.dir/src/main.cpp.obj	b092d25ac3792c10
+5	1145	8030865786770836	CMakeFiles/t16xe.dir/src/tasm.cpp.obj	f74688a5d4751866
+1145	1235	8030865798173815	t16xe.exe	1b392dc3894419ef

@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
     
     t16xe cpu;
     load_toru(cpu, toru);
+    
     cpu.reset();
     cpu.run();
     

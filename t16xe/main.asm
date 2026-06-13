@@ -3,17 +3,24 @@ section .code
     CALL main
     HLT
 
-inner:
-    MOV AX, #89    ; 'Y'
+print_digit:
+    MOV CX, #0
+pd_loop:
+    CMP AX, BX
+    JCC pd_done
+    SUB AX, BX
+    INC CX
+    JMP pd_loop
+pd_done:
+    MOV AX, CX
+    ADD AX, #48
     STB [0xFFF2], AX
     RET
 
-outer:
-    CALL inner
-    RET
-
 main:
-    CALL outer
-    MOV AX, #78    ; 'N'
+    MOV AX, #47
+    MOV BX, #10
+    CALL print_digit
+    MOV AX, #88       ; 'X' — отладка
     STB [0xFFF2], AX
     RET

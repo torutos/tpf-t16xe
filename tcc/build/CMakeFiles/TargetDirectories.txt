@@ -1,0 +1,3 @@
+D:/TPF/tpf-t16xe/tcc/build/CMakeFiles/tcc.dir
+D:/TPF/tpf-t16xe/tcc/build/CMakeFiles/edit_cache.dir
+D:/TPF/tpf-t16xe/tcc/build/CMakeFiles/rebuild_cache.dir
