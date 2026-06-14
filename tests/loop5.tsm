@@ -1,0 +1,13 @@
+section .code
+    org 0x0400
+    CALL main
+    HLT
+
+main:
+    MOV CX, #5
+    MOV AX, #88    ; 'X'
+.loop:
+    STB [0xFFF2], AX
+    DEC CX
+    JNE .loop
+    RET

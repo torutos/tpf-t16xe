@@ -1,0 +1,8 @@
+section .code
+    org 0x0400
+    CALL main
+    HLT
+
+main:
+    FOO AX, BX
+    RET
