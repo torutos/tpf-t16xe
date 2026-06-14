@@ -1,3 +1,0 @@
-D:/TPF/tpf-t16xe/t16xe/build/CMakeFiles/t16xe.dir
-D:/TPF/tpf-t16xe/t16xe/build/CMakeFiles/edit_cache.dir
-D:/TPF/tpf-t16xe/t16xe/build/CMakeFiles/rebuild_cache.dir

@@ -1,162 +1,11 @@
 #include "t16xe.hpp"
 
-uint8_t t16xe::decode_reg8() { return memory[phys_addr(CS, PC++)]; }
-
-uint16_t t16xe::decode_reg() { return memory[phys_addr(CS, PC++)]; }
-
-uint16_t t16xe::decode_imm16()
-{
-    auto lo = memory[phys_addr(CS, PC++)];
-    auto hi = memory[phys_addr(CS, PC++)];
-    return (hi << 8) | lo;
-}
-
-int8_t t16xe::decode_imm8()
-{
-    return static_cast<int8_t>(memory[phys_addr(CS, PC++)]);
-}
-
-void t16xe::write_reg(uint16_t reg, uint16_t val)
-{
-    switch (reg)
-    {
-    case REG_AX:
-        AX = val;
-        break;
-    case REG_BX:
-        BX = val;
-        break;
-    case REG_CX:
-        CX = val;
-        break;
-    case REG_DX:
-        DX = val;
-        break;
-    case REG_SP:
-        SP = val;
-        break;
-    }
-}
-
-uint16_t t16xe::read_reg(uint16_t reg) const
-{
-    switch (reg)
-    {
-    case REG_AX:
-        return AX;
-    case REG_BX:
-        return BX;
-    case REG_CX:
-        return CX;
-    case REG_DX:
-        return DX;
-    case REG_SP:
-        return SP;
-    default:
-        return 0;
-    }
-}
-
-void t16xe::update_flags(uint16_t val)
-{
-    flagZ = (val == 0);
-    flagN = (val & 0x8000) != 0;
-}
-
-void t16xe::reset()
-{
-    AX = BX = CX = DX = 0;
-    PC = 0;
-    SP = 0xFFFE;
-    CS = 0;
-    DS = 0x01;
-    SS = 0;
-    flagC = flagZ = flagN = flagO = false;
-    flagI = true; // прерывания запрещены
-
-    // Вектор сброса: читаем 4 байта из конца памяти
-    uint32_t vec = phys_addr(0, 0xFFF4); // CS=0, offset=0xFFF0
-    uint16_t lo = memory[vec] | (memory[vec + 1] << 8);
-    uint16_t hi = memory[vec + 2] | (memory[vec + 3] << 8);
-    CS = hi; // сегмент
-    PC = lo; // смещение
-}
-
-void t16xe::run()
-{
-    // std::cout << "RUN START\n";
-    while (true)
-    {
-        // Проверяем прерывани
-        // std::cout << "flagI=" << flagI << "\n";
-        if (!flagI)
-        {
-            // std::cout << "flagI=0, kbd=" << std::hex << (int)memory[0xFFF0] <<
-            // "\n";
-            if (memory[0xFFF0] & 1)
-            {
-                // std::cout << "IRQ!\n";
-                // std::cout << "IRQ at PC=" << PC << "\n";
-                // Вызываем INT 0x09 (клавиатура)
-                // Сохраняем флаги
-                uint8_t flags = (flagC ? 1 : 0) | (flagZ ? 2 : 0) | (flagN ? 4 : 0) |
-                                (flagO ? 8 : 0) | (flagI ? 16 : 0);
-                SP -= 2;
-                auto addr = phys_addr(SS, SP);
-                memory[addr] = flags;
-                memory[addr + 1] = 0;
-
-                // Сохраняем CS
-                SP -= 2;
-                addr = phys_addr(SS, SP);
-                memory[addr] = CS;
-                memory[addr + 1] = 0;
-
-                // Сохраняем PC (текущий, не меняем)
-                SP -= 2;
-                addr = phys_addr(SS, SP);
-                memory[addr] = PC & 0xFF;
-                memory[addr + 1] = PC >> 8;
-                // std::cout << "Saved PC: lo=" << std::hex << (int)memory[addr]
-                //     << " hi=" << (int)memory[addr + 1] << " PC was " << PC
-                //     << "\n";
-
-                // Запрещаем прерывания
-                flagI = true;
-
-                // Читаем вектор 0x09
-                uint32_t vec_addr = 0x10000 + 0x09 * 4;
-                uint16_t new_ip = memory[vec_addr] | (memory[vec_addr + 1] << 8);
-                uint8_t new_cs = memory[vec_addr + 2];
-
-                CS = new_cs;
-                PC = new_ip;
-                // std::cout << "IRQ! jumping to " << new_ip << "\n";
-                // Сбрасываем флаг клавиатуры
-                memory[0xFFF0] = 0;
-                // std::cout << "Saved PC to stack: lo=" << std::hex
-                //     << (int)memory[phys_addr(SS, SP)]
-                //     << " hi=" << (int)memory[phys_addr(SS, SP) + 1] << "\n";
-                continue; // переходим к выполнению обработчика
-            }
-        }
-        // std::cout << "CS=" << (int)CS << " PC=" << PC << "\n";
-        // Читаем опкод
-        uint32_t addr = phys_addr(CS, PC);
-        uint8_t opcode = memory[addr];
-        // std::cout << "opcode=" << std::hex << (int)opcode << " at PC=" << PC <<
-        // "\n";
-        if (!execute(opcode))
-            break;
-    }
-}
-
 bool t16xe::execute(uint8_t opcode)
 {
     // std::cout << "exec opcode=" << std::hex << (int)opcode << " at PC=" << PC -
     // 1
     //          << "\n";
-    std::cout << "PC=" << PC << " opcode=" << std::hex << (int)opcode << "\n";
+    // std::cout << "PC=" << PC << " opcode=" << std::hex << (int)opcode << "\n";
     PC++;
 
     switch (opcode)
@@ -402,7 +251,7 @@ bool t16xe::execute(uint8_t opcode)
         memory[addr] = PC & 0xFF;
         memory[addr + 1] = PC >> 8;
 
-        std::cout << "CALL: saved PC=" << PC << " to SP=" << SP << " (mem[" << addr << "]=" << (int)memory[addr] << "," << (int)memory[addr + 1] << ")\n";
+        // std::cout << "CALL: saved PC=" << PC << " to SP=" << SP << " (mem[" << addr << "]=" << (int)memory[addr] << "," << (int)memory[addr + 1] << ")\n";
 
         CS = seg;
         PC = off;
@@ -411,11 +260,11 @@ bool t16xe::execute(uint8_t opcode)
     case RET:
     {
         auto addr = phys_addr(SS, SP);
-        CS = memory[addr];
+        PC = memory[addr] | (memory[addr + 1] << 8); // сначала PC
         SP += 2;
 
-        addr = phys_addr(SS, SP); // ← ДОБАВЬ ЭТУ СТРОКУ
-        PC = memory[addr] | (memory[addr + 1] << 8);
+        addr = phys_addr(SS, SP);
+        CS = memory[addr]; // потом CS
         SP += 2;
         break;
     }
@@ -540,7 +389,7 @@ bool t16xe::execute(uint8_t opcode)
 
     case IRET:
     {
-        std::cout << "HANDLER\n";
+        // std::cout << "HANDLER\n";
         // Восстанавливаем PC
         auto addr = phys_addr(SS, SP);
         PC = memory[addr] | (memory[addr + 1] << 8);
@@ -560,7 +409,7 @@ bool t16xe::execute(uint8_t opcode)
         flagO = flags & 8;
         flagI = flags & 16;
         SP += 2;
-        std::cout << "IRET to PC=" << PC << "\n";
+        // std::cout << "IRET to PC=" << PC << "\n";
         break;
     }
 
@@ -592,7 +441,7 @@ bool t16xe::execute(uint8_t opcode)
         auto val = read_reg(reg) & 0xFF;
         if (off == 0xFFF0)
         {
-            std::cout << "SBR: writing " << val << " to " << off << "\n";
+            // std::cout << "SBR: writing " << val << " to " << off << "\n";
         }
         if (off == 0xFFF2)
         {
@@ -631,6 +480,8 @@ bool t16xe::execute(uint8_t opcode)
 
     default:
     {
+        std::cerr << "Runtime error: unknown opcode 0x" << std::hex << (int)opcode
+                  << " at PC=0x" << (PC - 1) << "\n";
         return false;
     }
     }

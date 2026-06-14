@@ -32,7 +32,7 @@ std::string clean_token(const std::string &s)
 
 void tasm::assemble_line(const std::string &line)
 {
-	std::cout << "LINE: " << line << "\n";
+	// std::cout << "LINE: " << line << "\n";
 	// std::cout << "start/assemble_line/strel.done output: "
 	//          << labels.find("strlen.done")->second << std::endl;
 	std::istringstream iss(line);
@@ -489,9 +489,9 @@ void tasm::assemble_line(const std::string &line)
 		iss >> arg;
 		if (labels.count(arg))
 		{
-			std::cout << labels.find(arg)->second;
+			// std::cout << labels.find(arg)->second;
 		}
-		std::cout << "\n";
+		// std::cout << "\n";
 		uint8_t seg = 0;
 		uint16_t addr;
 		if (labels.count(arg))
@@ -717,11 +717,11 @@ void tasm::assemble_file(const std::string &path)
 	uint16_t data_offset = 0;
 	uint16_t code_offset = org_addr; // начинаем с org_addr
 
-	std::cout << "=== LINES AFTER EXPANSION ===\n";
-	for (auto &ln : lines)
-	{
-		std::cout << ln << "\n";
-	}
+	// std::cout << "=== LINES AFTER EXPANSION ===\n";
+	// for (auto &ln : lines)
+	// {
+	//	std::cout << ln << "\n";
+	// }
 	// Первый проход: собираем метки
 	for (const auto &ln : lines)
 	{
@@ -788,19 +788,19 @@ void tasm::assemble_file(const std::string &path)
 				// std::cout << " after=" << code_offset << "\n";
 			}
 			int sz = instruction_size(work);
-			std::cout << "  INST: [" << work << "] size=" << sz
-			 		  << " code_offset=" << code_offset;
+			// std::cout << "  INST: [" << work << "] size=" << sz
+			// 		  << " code_offset=" << code_offset;
 			code_offset += sz;
-			std::cout << " -> " << code_offset << "\n";
+			// std::cout << " -> " << code_offset << "\n";
 		}
 	}
 
-	std::cout << "Labels: ";
-	for (auto &pair : labels)
-	{
-		std::cout << pair.first << "=" << pair.second << " ";
-	}
-	std::cout << "\n";
+	// std::cout << "Labels: ";
+	// for (auto &pair : labels)
+	// {
+	// 	std::cout << pair.first << "=" << pair.second << " ";
+	// }
+	// std::cout << "\n";
 
 	// std::cout << "strlen.done=" << labels.find("strlen.done")->second
 	// << " strlen.loop=" << labels.find("strlen.loop")->second<< "\n";
@@ -1162,10 +1162,10 @@ std::vector<std::string> tasm::expand_macro(const std::string &line)
 		args.push_back(arg);
 	}
 
-	std::cout << "MACRO " << name << " args: ";
-	for (auto &a : args)
-		std::cout << "[" << a << "] ";
-	std::cout << "\n";
+	// std::cout << "MACRO " << name << " args: ";
+	//for (auto &a : args)
+	//	std::cout << "[" << a << "] ";
+	// std::cout << "\n";
 
 	std::vector<std::string> result;
 	for (const auto &body_line : m.body)
@@ -1174,14 +1174,14 @@ std::vector<std::string> tasm::expand_macro(const std::string &line)
 		for (int i = 0; i < args.size(); i++)
 		{
 			std::string placeholder = "%" + std::to_string(i + 1);
-			std::cout << "  replacing " << placeholder << " with " << args[i] << " in " << expanded << "\n";
+			// std::cout << "  replacing " << placeholder << " with " << args[i] << " in " << expanded << "\n";
 			size_t pos = expanded.find(placeholder);
 			if (pos != std::string::npos)
 			{
 				expanded.replace(pos, placeholder.length(), args[i]);
 			}
 		}
-		std::cout << "  result: " << expanded << "\n";
+		// std::cout << "  result: " << expanded << "\n";
 		result.push_back(expanded);
 	}
 	return result;
@@ -1224,7 +1224,7 @@ std::string tasm::replace_equ(const std::string &line)
 		// ОТЛАДКА
 		if (result.find(name) != std::string::npos)
 		{
-			std::cout << "  EQU found '" << name << "' in '" << result << "' -> '" << value << "'\n";
+			// std::cout << "  EQU found '" << name << "' in '" << result << "' -> '" << value << "'\n";
 		}
 		while ((pos = result.find(name, pos)) != std::string::npos)
 		{

@@ -1,4 +1,0 @@
-int main() {
-    print_int(42 + 5);
-    return 0;
-}

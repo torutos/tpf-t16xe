@@ -73,17 +73,9 @@ struct t16xe {
 
     t16xe() { memory = make_unique<uint8_t[]>(MEMORY_SIZE); }
 
-    inline uint32_t phys_addr(uint8_t seg, uint16_t offset) const {
-        if (offset >= 0xFFF0) {
-            return offset; // порты
-        }
-
-        return ((uint32_t)seg << 16) | offset;
-    }
-
     void reset();
     void run();
-
+    uint32_t phys_addr(uint8_t seg, uint16_t offset) const;
 private:
     bool execute(uint8_t opcode);
     uint8_t decode_reg8();

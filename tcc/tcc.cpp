@@ -6,6 +6,9 @@
 #include <sstream>
 #include <cctype>
 #include <algorithm>
+#include "../t16xe/src/asm/tasm.hpp"
+#include "../t16xe/src/kernel/t16xe.hpp"
+#include "../t16xe/src/kernel/tools.hpp"
 
 class TCC {
     std::vector<std::string> output;
@@ -24,7 +27,7 @@ public:
     void expr(const std::string& s) {
         // Убираем пробелы
         std::string e = s;
-        e.erase(std::remove_if(e.begin(), e.end(), isspace), e.end());
+        e.erase(std::remove_if(e.begin(), e.end(), [](unsigned char c) { return std::isspace(c); }), e.end());
         
         // Если это просто число
         bool is_num = true;
@@ -86,7 +89,6 @@ public:
         
         // Библиотека
         file << "mul:\n";
-        file << "    ; AX = AX * BX (простое умножение сложением)\n";
         file << "    PUSH CX\n";
         file << "    MOV CX, AX\n";
         file << "    MOV AX, #0\n";
@@ -101,7 +103,6 @@ public:
         file << "    RET\n\n";
         
         file << "print_int:\n";
-        file << "    ; вывод числа из AX (0-999)\n";
         file << "    PUSH BX\n";
         file << "    PUSH CX\n";
         file << "    PUSH DX\n";
@@ -117,7 +118,6 @@ public:
         file << "    RET\n\n";
         
         file << "print_digit:\n";
-        file << "    ; выводит (AX / BX) % 10 как цифру\n";
         file << "    MOV CX, #0\n";
         file << "pd_loop:\n";
         file << "    CMP AX, BX\n";
@@ -143,59 +143,50 @@ public:
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: tcc <file.c>\n";
-        std::cerr << "  Supports: print_int(expr);\n";
+        std::cerr << "Usage: tcc <file.tc> [-o <output.toru>] [-run]\n";
         return 1;
     }
 
-    std::ifstream file(argv[1]);
+    std::string input = argv[1];
+    std::string asm_file = input.substr(0, input.find_last_of('.')) + ".tsm";
+    std::string toru_file = input.substr(0, input.find_last_of('.')) + ".toru";
+    bool run = false;
+
+    for (int i = 2; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-run") run = true;
+        else if (arg == "-o" && i + 1 < argc) toru_file = argv[++i];
+    }
+
+    // Читаем .tc
+    std::ifstream file(input);
     if (!file) {
-        std::cerr << "Cannot open " << argv[1] << "\n";
+        std::cerr << "Cannot open " << input << "\n";
         return 1;
     }
+    std::string source((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
 
+    // Шаг 1: C → ассемблер
     TCC compiler;
-    std::string line;
-    bool in_main = false;
-    
-    while (std::getline(file, line)) {
-        // Убираем пробелы по краям
-        size_t start = line.find_first_not_of(" \t\r\n");
-        if (start == std::string::npos) continue;
-        size_t end = line.find_last_not_of(" \t\r\n");
-        line = line.substr(start, end - start + 1);
-        
-        // Пропускаем всё, что не в main
-        if (line.find("int main") != std::string::npos) {
-            in_main = true;
-            compiler.emit("main:");
-            continue;
-        }
-        if (line == "{") continue;
-        if (line == "}") {
-            compiler.emit("RET");
-            break;
-        }
-        if (!in_main) continue;
-        
-        // print_int(expr);
-        if (line.find("print_int(") == 0) {
-            std::string arg = line.substr(10, line.length() - 12); // print_int( ... );
-            compiler.expr(arg);
-            compiler.emit("CALL print_int");
-            continue;
-        }
-        
-        // return expr;
-        if (line.find("return ") == 0) {
-            std::string arg = line.substr(7, line.length() - 8); // return ... ;
-            compiler.expr(arg);
-            continue;
-        }
+    // ... парсинг и генерация ...
+    compiler.write(asm_file);
+    std::cout << "Compiled to " << asm_file << "\n";
+
+    // Шаг 2: Ассемблер → .toru
+    tasm assembler;
+    assembler.assemble_file(asm_file);
+    assembler.write_toru(toru_file);
+    std::cout << "Assembled to " << toru_file << "\n";
+
+    // Шаг 3: Запуск
+    if (run) {
+        std::cout << "Running...\n";
+        t16xe cpu;
+        load_toru(cpu, toru_file);
+        cpu.reset();
+        cpu.run();
     }
 
-    std::string output = std::string(argv[1]).substr(0, std::string(argv[1]).find_last_of('.')) + ".asm";
-    compiler.write(output);
-    std::cout << "Compiled to " << output << "\n";
     return 0;
 }
