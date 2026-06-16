@@ -35,6 +35,7 @@ uint16_t tasm::parse_immediate(const std::string& src) {
         return src[2];
     }
     return safe_stoi(src.substr(1));
+	}
 }
 
 
