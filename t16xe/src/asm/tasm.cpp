@@ -11,24 +11,33 @@ int safe_stoi(const std::string &str, int base = 0)
 	}
 	catch (std::exception &e)
 	{
-		// std::cerr << "STOI ERROR: '" << str << "' - " << e.what() << "\n";
+		std::cerr << "STOI ERROR: '" << str << "' - " << e.what() << "\n";
 		throw;
 	}
 }
 std::string clean_token(const std::string &s)
 {
 	std::string t = s;
-	// убрать запятую где угодно (только одну)
 	size_t comma = t.find(',');
 	if (comma != std::string::npos)
 		t.erase(comma, 1);
-	// убрать пробелы по краям
 	size_t start = t.find_first_not_of(" \t");
 	if (start == std::string::npos)
 		return "";
 	size_t end = t.find_last_not_of(" \t");
 	return t.substr(start, end - start + 1);
 }
+
+uint16_t tasm::parse_immediate(const std::string& src) {
+    if (src[0] == '\'') {
+        return src[1];
+    if (src.length() > 1 && src[1] == '\'') {
+        return src[2];
+    }
+    return safe_stoi(src.substr(1));
+}
+
+
 
 void tasm::assemble_line(const std::string &line)
 {
@@ -64,19 +73,7 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x01);
 			code_output.push_back(regs[dst]);
-			uint16_t val;
-			if (src[0] == '\'')
-			{
-				val = src[1]; // 'K' -> K
-			}
-			else if (src[0] == '#' && src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -178,15 +175,7 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x17); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -207,15 +196,7 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x18); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -236,15 +217,7 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x19); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -386,15 +359,7 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x1A); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -416,14 +381,7 @@ void tasm::assemble_line(const std::string &line)
 			code_output.push_back(0x1B); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
 			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}
@@ -445,14 +403,7 @@ void tasm::assemble_line(const std::string &line)
 			code_output.push_back(0x1C); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
 			uint16_t val;
-			if (src.length() > 1 && src[1] == '\'')
-			{
-				val = src[2]; // #'K' -> K
-			}
-			else
-			{
-				val = safe_stoi(src.substr(1));
-			}
+			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
 		}

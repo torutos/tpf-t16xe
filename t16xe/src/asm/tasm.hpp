@@ -46,4 +46,7 @@ public:
     void expand_times(std::vector<std::string>& lines);
     int data_size(const std::string& line);
     void assemble_data(const std::string& line);
+    uint16_t parse_immediate(const std::string& src);
+    void cdebug(const std::string& msg);
+    void cdebug_code(const std::vector<uint8_t>& code);
 };
