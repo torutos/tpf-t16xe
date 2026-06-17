@@ -36,8 +36,15 @@ uint16_t tasm::parse_immediate(const std::string& src) {
     }
     return safe_stoi(src.substr(1));
 	}
+	return 0;
 }
 
+
+#ifdef DEBUG
+void tasm::debug(std::string line) {
+	
+}
+#endif
 
 
 void tasm::assemble_line(const std::string &line)
@@ -381,7 +388,6 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x1B); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
 			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);
@@ -403,7 +409,6 @@ void tasm::assemble_line(const std::string &line)
 		{
 			code_output.push_back(0x1C); // ADD_REG_IMM
 			code_output.push_back(regs[dst]);
-			uint16_t val;
 			uint16_t val = parse_immediate(src);
 			code_output.push_back(val & 0xFF);
 			code_output.push_back(val >> 8);

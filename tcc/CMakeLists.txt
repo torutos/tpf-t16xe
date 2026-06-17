@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 4.0)
-project(tcc)
 add_executable(tcc
     tcc.cpp
     ../t16xe/src/asm/tasm.cpp
@@ -8,3 +6,4 @@ add_executable(tcc
     ../t16xe/src/kernel/utils.cpp
     ../t16xe/src/kernel/tools.hpp
 )
+target_link_directories(tcc PUBLIC)
