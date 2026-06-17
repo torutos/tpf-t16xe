@@ -347,7 +347,7 @@ bool t16xe::execute(uint8_t opcode)
         break;
     }
 
-    case INT:
+    case SOFTWARE_INT:
     {
         auto vector = decode_imm8();
         // std::cout << "INT " << (int)vector << " vec_addr=" << vector * 4

@@ -1,11 +1,14 @@
-cmake_minimum_required(VERSION 4.0)
-project(t16xe)
-add_executable(${PROJECT_NAME}
-    src/main.cpp
+# Статическая библиотека для GUI
+add_library(t16xe_lib STATIC
     src/kernel/t16xe.cpp
     src/kernel/execute.cpp
     src/kernel/utils.cpp
     src/asm/tasm.cpp
     src/validator/TasmValidator.cpp
 )
-target_link_directories(t16xe PUBLIC src)
+
+target_include_directories(t16xe_lib PUBLIC src)
+
+# Исполняемый файл (как раньше)
+add_executable(t16xe src/main.cpp)
+target_link_libraries(t16xe t16xe_lib)

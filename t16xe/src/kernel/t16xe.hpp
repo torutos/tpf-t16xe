@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
-using namespace std;
 
 enum : uint8_t {
     HLT = 0x00,         // останов
@@ -36,7 +35,7 @@ enum : uint8_t {
     XOR_REG_IMM = 0x1C,
     LDB_REG_MEMREG = 0x1D, // загрузить байт из [reg] в регистр (старший байт = 0)
     STB_MEMREG_REG = 0x1E, // сохранить младший байт регистра в [reg]
-    INT = 0x1F,
+    SOFTWARE_INT = 0x1F,
     IRET = 0x20,
     STI = 0x21,
     CLI = 0x22,
@@ -57,7 +56,7 @@ enum : uint8_t {
 
 struct t16xe {
     static constexpr size_t MEMORY_SIZE = 1048576; // 1 МБ
-    unique_ptr<uint8_t[]> memory;
+    std::unique_ptr<uint8_t[]> memory;
 
     uint16_t AX = 0, BX = 0, CX = 0, DX = 0;
     uint16_t PC = 0;
@@ -71,7 +70,7 @@ struct t16xe {
     bool flagO = false; // Overflow
     bool flagI = true;  // Interrupt Disable — после сброса прерывания запрещены
 
-    t16xe() { memory = make_unique<uint8_t[]>(MEMORY_SIZE); }
+    t16xe() { memory = std::make_unique<uint8_t[]>(MEMORY_SIZE); }
 
     void reset();
     void run();

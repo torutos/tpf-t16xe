@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(GuiTest)
+project(gui)
 
 set(CMAKE_CXX_STANDARD 17)
+
+find_package(OpenGL REQUIRED)
 
 # GLFW через FetchContent
 include(FetchContent)
@@ -16,7 +18,7 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
-# ImGui — все .cpp файлы из папки imgui и backends
+# ImGui
 file(GLOB IMGUI_SOURCES
     imgui/*.cpp
     imgui/backends/imgui_impl_glfw.cpp
@@ -24,13 +26,13 @@ file(GLOB IMGUI_SOURCES
 )
 
 add_library(imgui STATIC ${IMGUI_SOURCES})
-# Путь к GLFW для ImGui
 target_include_directories(imgui PUBLIC
     imgui
     imgui/backends
     ${glfw_SOURCE_DIR}/include
 )
-find_package(OpenGL REQUIRED)
+
 # Приложение
-add_executable(gui-test gui_main.cpp)
-target_link_libraries(gui-test imgui glfw OpenGL::GL)
+add_executable(gui gui_main.cpp TextEditor.cpp tinyfiledialogs.c)
+target_link_libraries(gui imgui glfw OpenGL::GL t16xe_lib)
+target_include_directories(gui PUBLIC ../t16xe/src)
