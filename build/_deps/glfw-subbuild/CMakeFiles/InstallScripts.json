@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

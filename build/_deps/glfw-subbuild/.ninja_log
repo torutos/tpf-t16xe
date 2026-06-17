@@ -1,0 +1,21 @@
+# ninja log v7
+0	37	8034142848957572	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	b68aada6dcd1bd00
+0	37	8034142848957572	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	b68aada6dcd1bd00
+38	3901	8034142887581799	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	87f53d7cbfb15c05
+38	3901	8034142887581799	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	87f53d7cbfb15c05
+3901	3994	8034142887632141	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	b99775ae561bd550
+3901	3994	8034142887632141	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	b99775ae561bd550
+3995	4033	8034142888912341	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	b32189352c448c47
+3995	4033	8034142888912341	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	b32189352c448c47
+4033	4070	8034142889278692	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	cf40965401c77567
+4033	4070	8034142889278692	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	cf40965401c77567
+4070	4106	8034142889640715	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	3bc0c8c7ceb8cda3
+4070	4106	8034142889640715	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	3bc0c8c7ceb8cda3
+4106	4145	8034142890025983	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	495c1793b3f88d7d
+4106	4145	8034142890025983	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	495c1793b3f88d7d
+4145	4181	8034142890395506	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	ebb6f3d7e75832af
+4145	4181	8034142890395506	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	ebb6f3d7e75832af
+4182	4229	8034142890873313	CMakeFiles/glfw-populate-complete	db8203dcfad2a40b
+4182	4229	8034142890873313	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	db8203dcfad2a40b
+4182	4229	8034142890873313	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete	db8203dcfad2a40b
+4182	4229	8034142890873313	D:/TPF/tpf-t16xe/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	db8203dcfad2a40b

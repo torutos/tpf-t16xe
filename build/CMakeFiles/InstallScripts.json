@@ -1,0 +1,13 @@
+{
+	"InstallScripts" : 
+	[
+		"D:/TPF/tpf-t16xe/build/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/t16xe/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/tcc/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/gui/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/_deps/glfw-build/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/_deps/glfw-build/src/cmake_install.cmake",
+		"D:/TPF/tpf-t16xe/build/_deps/glfw-build/docs/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
