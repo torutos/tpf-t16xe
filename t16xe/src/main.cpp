@@ -4,7 +4,6 @@
 #include "asm/tasm.hpp"
 #include "kernel/t16xe.hpp"
 #include <fstream>
-#include "validator/TasmValidator.hpp"
 #include "kernel/tools.hpp"
 
 void print_usage()
@@ -92,7 +91,7 @@ int main2(int argc, char *argv[])
 
     return 0;
 }
-int main(int argc, char *argv[])
+int main(const int argc, char *argv[])
 {
     if (argc < 2)
     {
@@ -101,13 +100,7 @@ int main(int argc, char *argv[])
     }
 
     std::string input = argv[1];
-    std::string toru = input.substr(0, input.find_last_of('.')) + ".toru";
-
-    TasmValidator validator;
-    if (!validator.validate_file(input))
-    {
-        return 1;
-    }
+    const std::string toru = input.substr(0, input.find_last_of('.')) + ".toru";
     
 
     tasm t;

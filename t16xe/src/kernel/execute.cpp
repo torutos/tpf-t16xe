@@ -2,10 +2,6 @@
 
 bool t16xe::execute(uint8_t opcode)
 {
-    // std::cout << "exec opcode=" << std::hex << (int)opcode << " at PC=" << PC -
-    // 1
-    //          << "\n";
-    // std::cout << "PC=" << PC << " opcode=" << std::hex << (int)opcode << "\n";
     PC++;
 
     switch (opcode)
@@ -138,10 +134,12 @@ bool t16xe::execute(uint8_t opcode)
         auto off = decode_imm16();
         auto reg = decode_reg();
         auto val = read_reg(reg);
-        // std::cout << "STOR to 0x" << std::hex << off << " val=" << val << "\n";
         if (off == 0xFFF2)
         {
-            std::cout << (char)(val & 0xFF);
+            if (output_callback)
+                output_callback(static_cast<char>(val & 0xFF));
+            else
+                std::cout << static_cast<char>(val & 0xFF);
             std::cout.flush();
         }
         auto addr = phys_addr(DS, off);
@@ -156,7 +154,7 @@ bool t16xe::execute(uint8_t opcode)
         auto val = read_reg(reg) + 1;
         write_reg(reg, val);
         update_flags(val);
-        flagC = (val == 0); // перенос если был переход через FFFF
+        flagC = (val == 0);
         break;
     }
     case DEC_REG:
@@ -250,8 +248,6 @@ bool t16xe::execute(uint8_t opcode)
         addr = phys_addr(SS, SP);
         memory[addr] = PC & 0xFF;
         memory[addr + 1] = PC >> 8;
-
-        // std::cout << "CALL: saved PC=" << PC << " to SP=" << SP << " (mem[" << addr << "]=" << (int)memory[addr] << "," << (int)memory[addr + 1] << ")\n";
 
         CS = seg;
         PC = off;
@@ -350,11 +346,6 @@ bool t16xe::execute(uint8_t opcode)
     case SOFTWARE_INT:
     {
         auto vector = decode_imm8();
-        // std::cout << "INT " << (int)vector << " vec_addr=" << vector * 4
-        //     << " new_ip="
-        //     << (memory[vector * 4] | (memory[vector * 4 + 1] << 8))
-        //     << " new_cs=" << (int)memory[vector * 4 + 2] << "\n";
-        // Сохраняем флаги в стек
         uint8_t flags = (flagC ? 1 : 0) | (flagZ ? 2 : 0) | (flagN ? 4 : 0) |
                         (flagO ? 8 : 0) | (flagI ? 16 : 0);
         SP -= 2;
@@ -389,8 +380,6 @@ bool t16xe::execute(uint8_t opcode)
 
     case IRET:
     {
-        // std::cout << "HANDLER\n";
-        // Восстанавливаем PC
         auto addr = phys_addr(SS, SP);
         PC = memory[addr] | (memory[addr + 1] << 8);
         SP += 2;
@@ -409,7 +398,6 @@ bool t16xe::execute(uint8_t opcode)
         flagO = flags & 8;
         flagI = flags & 16;
         SP += 2;
-        // std::cout << "IRET to PC=" << PC << "\n";
         break;
     }
 
@@ -439,13 +427,12 @@ bool t16xe::execute(uint8_t opcode)
         auto off = decode_imm16();
         auto reg = decode_reg();
         auto val = read_reg(reg) & 0xFF;
-        if (off == 0xFFF0)
-        {
-            // std::cout << "SBR: writing " << val << " to " << off << "\n";
-        }
         if (off == 0xFFF2)
         {
-            std::cout << (char)val;
+            if (output_callback)
+                output_callback(static_cast<char>(val & 0xFF));
+            else
+                std::cout << static_cast<char>(val & 0xFF);
             std::cout.flush();
         }
         auto addr = phys_addr(DS, off);
@@ -480,7 +467,7 @@ bool t16xe::execute(uint8_t opcode)
 
     default:
     {
-        std::cerr << "Runtime error: unknown opcode 0x" << std::hex << (int)opcode
+        std::cerr << "Runtime error: unknown opcode 0x" << std::hex << static_cast<int>(opcode)
                   << " at PC=0x" << (PC - 1) << "\n";
         return false;
     }

@@ -2,6 +2,8 @@
 #include <exception>
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 
 int safe_stoi(const std::string &str, int base = 0)
 {
@@ -11,7 +13,7 @@ int safe_stoi(const std::string &str, int base = 0)
 	}
 	catch (std::exception &e)
 	{
-		// std::cerr << "STOI ERROR: '" << str << "' - " << e.what() << "\n";
+		std::cerr << "STOI ERROR: '" << str << "' - " << e.what() << "\n";
 		throw;
 	}
 }
@@ -19,22 +21,18 @@ std::string clean_token(const std::string &s)
 {
 	std::string t = s;
 	// убрать запятую где угодно (только одну)
-	size_t comma = t.find(',');
-	if (comma != std::string::npos)
+	if (const size_t comma = t.find(','); comma != std::string::npos)
 		t.erase(comma, 1);
 	// убрать пробелы по краям
-	size_t start = t.find_first_not_of(" \t");
+	const size_t start = t.find_first_not_of(" \t");
 	if (start == std::string::npos)
 		return "";
-	size_t end = t.find_last_not_of(" \t");
+	const size_t end = t.find_last_not_of(" \t");
 	return t.substr(start, end - start + 1);
 }
 
 void tasm::assemble_line(const std::string &line)
 {
-	// std::cout << "LINE: " << line << "\n";
-	// std::cout << "start/assemble_line/strel.done output: "
-	//          << labels.find("strlen.done")->second << std::endl;
 	std::istringstream iss(line);
 	std::string mnemonic;
 	iss >> mnemonic;
@@ -67,11 +65,11 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src[0] == '\'')
 			{
-				val = src[1]; // 'K' -> K
+				val = static_cast<unsigned char>(src[1]); // 'K' -> K
 			}
 			else if (src[0] == '#' && src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -100,7 +98,6 @@ void tasm::assemble_line(const std::string &line)
 		}
 		else if (regs.count(src))
 		{
-			// MOV reg, reg (бывший MOVR)
 			code_output.push_back(0x02); // MOV_REG_REG
 			code_output.push_back(regs[dst]);
 			code_output.push_back(regs[src]);
@@ -110,7 +107,6 @@ void tasm::assemble_line(const std::string &line)
 	{
 		std::string src, dst;
 		iss >> src >> dst;
-		// std::cout << "STOR: src=" << src << " dst=" << dst << "\n";
 		dst = clean_token(dst);
 		src = clean_token(src);
 		if (src[0] == '[')
@@ -135,7 +131,6 @@ void tasm::assemble_line(const std::string &line)
 				code_output.push_back(regs[dst]);
 			}
 		}
-		// std::cout << "STOR src after clean: '" << src << "'\n";
 	}
 	else if (mnemonic == "LOAD")
 	{
@@ -153,7 +148,7 @@ void tasm::assemble_line(const std::string &line)
 				src[0] == 'S')
 			{
 				// LOAD reg, [reg]
-				code_output.push_back(0x0F); // MOV_REG_MEMREG
+				code_output.push_back(0x0F);
 				code_output.push_back(regs[dst]);
 				code_output.push_back(regs[src]);
 			}
@@ -181,7 +176,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -210,7 +205,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -239,7 +234,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -262,21 +257,16 @@ void tasm::assemble_line(const std::string &line)
 		int8_t offset;
 		if (labels.count(arg))
 		{
-			// std::cout << "JEQ " << arg << " label_addr=" <<
-			// labels.find(arg)->second
-			//           << " code_size=" << code_output.size() << "\n";
-			// Стало:
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else if (!current_global_label.empty() && labels.count(current_global_label + arg))
 		{
-			// локальная метка с префиксом
 			arg = current_global_label + arg;
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else
 		{
-			offset = safe_stoi(arg);
+			offset = static_cast<signed char>(safe_stoi(arg));
 		}
 		code_output.push_back(0x06);
 		code_output.push_back(offset);
@@ -288,40 +278,30 @@ void tasm::assemble_line(const std::string &line)
 		int8_t offset;
 		if (labels.count(arg))
 		{
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else if (!current_global_label.empty() && labels.count(current_global_label + arg))
 		{
 			// локальная метка с префиксом
 			arg = current_global_label + arg;
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else
 		{
-			offset = safe_stoi(arg);
+			offset = static_cast<signed char>(safe_stoi(arg));
 		}
 		code_output.push_back(0x07);
 		code_output.push_back(offset);
 	}
 	else if (mnemonic == "JMP")
 	{
-		// std::cout << "DEBUG JMP 1: strlen.done=" <<
-		// labels.find("strlen.done")->second<< "\n";
 		std::string arg;
 		iss >> arg;
-		// std::cout << "DEBUG JMP 2: arg=" << arg
-		//           << " strlen.done=" << labels.find("strlen.done")->second <<
-		//           "\n";
 		uint8_t seg = 0;
 		uint16_t addr;
 		if (labels.count(arg))
 		{
-			//   std::cout << "DEBUG JMP 3: before labels[arg] strlen.done="
-			//             << labels.find("strlen.done")->second << "\n";
 			addr = labels.find(arg)->second;
-			// std::cout << "DEBUG JMP 4: after labels[arg] strlen.done="
-			//           << labels.find("strlen.done")->second << " addr=" << addr <<
-			//           "\n";
 		}
 		else if (!current_global_label.empty() && labels.count(current_global_label + arg))
 		{
@@ -332,21 +312,10 @@ void tasm::assemble_line(const std::string &line)
 		{
 			addr = safe_stoi(arg);
 		}
-		// std::cout << "DEBUG JMP 5: before push strlen.done="
-		//          << labels.find("strlen.done")->second << "\n";
 		code_output.push_back(0x08);
-		// std::cout << "DEBUG JMP 6: after push 08 strlen.done="
-		//           << labels.find("strlen.done")->second << "\n";
 		code_output.push_back(seg);
-		// std::cout << "DEBUG JMP 7: after push seg strlen.done="
-		//           << labels.find("strlen.done")->second << "\n";
 		code_output.push_back(addr & 0xFF);
-		// std::cout << "DEBUG JMP 8: after push lo strlen.done="
-		//           << labels.find("strlen.done")->second << "\n";
 		code_output.push_back(addr >> 8);
-		// std::cout << "DEBUG JMP 9: end strlen.done=" <<
-		// labels.find("strlen.done")->second
-		//           << "\n";
 	}
 	else if (mnemonic == "PUSH")
 	{
@@ -389,7 +358,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -418,7 +387,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -447,7 +416,7 @@ void tasm::assemble_line(const std::string &line)
 			uint16_t val;
 			if (src.length() > 1 && src[1] == '\'')
 			{
-				val = src[2]; // #'K' -> K
+				val = static_cast<unsigned char>(src[2]); // #'K' -> K
 			}
 			else
 			{
@@ -487,11 +456,6 @@ void tasm::assemble_line(const std::string &line)
 	{
 		std::string arg;
 		iss >> arg;
-		if (labels.count(arg))
-		{
-			// std::cout << labels.find(arg)->second;
-		}
-		// std::cout << "\n";
 		uint8_t seg = 0;
 		uint16_t addr;
 		if (labels.count(arg))
@@ -546,13 +510,10 @@ void tasm::assemble_line(const std::string &line)
 	}
 	else if (mnemonic == "STB")
 	{
-		try
-		{
 			std::string src, dst;
 			iss >> src >> dst;
 			dst = clean_token(dst);
 			src = clean_token(src);
-			// std::cout << "STB: src=" << src << " comma=" << " dst=" << dst << "\n";
 			if (src[0] == '[')
 			{
 				src = src.substr(1);
@@ -574,11 +535,6 @@ void tasm::assemble_line(const std::string &line)
 					code_output.push_back(regs[dst]);
 				}
 			}
-		}
-		catch (std::exception &ex)
-		{
-			// std::cerr << "Exception: " << ex.what() << "\n";
-		}
 	}
 	else if (mnemonic == "INT")
 	{
@@ -608,16 +564,16 @@ void tasm::assemble_line(const std::string &line)
 		int8_t offset;
 		if (labels.count(arg))
 		{
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else if (!current_global_label.empty() && labels.count(current_global_label + arg))
 		{
 			arg = current_global_label + arg;
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else
 		{
-			offset = safe_stoi(arg);
+			offset = static_cast<signed char>(safe_stoi(arg));
 		}
 		code_output.push_back(0x28);
 		code_output.push_back(offset);
@@ -629,16 +585,16 @@ void tasm::assemble_line(const std::string &line)
 		int8_t offset;
 		if (labels.count(arg))
 		{
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else if (!current_global_label.empty() && labels.count(current_global_label + arg))
 		{
 			arg = current_global_label + arg;
-			offset = labels.find(arg)->second - (code_output.size() + 2);
+			offset = static_cast<signed char>(labels.find(arg)->second - (code_output.size() + 2));
 		}
 		else
 		{
-			offset = safe_stoi(arg);
+			offset = static_cast<signed char>(safe_stoi(arg));
 		}
 		code_output.push_back(0x29);
 		code_output.push_back(offset);
@@ -672,7 +628,7 @@ void tasm::assemble_file(const std::string &path)
 				std::ifstream inc_file(inc_path);
 				if (!inc_file)
 				{
-					// std::cerr << "ERROR: cannot open " << inc_path << "\n";
+					std::cerr << "ERROR: cannot open " << inc_path << "\n";
 					continue;
 				}
 				std::string inc_line;
@@ -683,10 +639,7 @@ void tasm::assemble_file(const std::string &path)
 						inc_line.pop_back();
 					lines.push_back(inc_line);
 					count++;
-					// std::cout << "INC: [" << inc_line << "]\n";
 				}
-				// std::cout << "Included " << count << " lines from " << inc_path <<
-				// "\n";
 			}
 		}
 		else
@@ -717,11 +670,6 @@ void tasm::assemble_file(const std::string &path)
 	uint16_t data_offset = 0;
 	uint16_t code_offset = org_addr; // начинаем с org_addr
 
-	// std::cout << "=== LINES AFTER EXPANSION ===\n";
-	// for (auto &ln : lines)
-	// {
-	//	std::cout << ln << "\n";
-	// }
 	// Первый проход: собираем метки
 	for (const auto &ln : lines)
 	{
@@ -757,7 +705,7 @@ void tasm::assemble_file(const std::string &path)
 			// Локальные метки (начинаются с точки)
 			if (!label.empty() && label[0] == '.')
 			{
-				label = current_global_label + label;
+				label.insert(0, current_global_label);
 			}
 			else
 			{
@@ -780,37 +728,10 @@ void tasm::assemble_file(const std::string &path)
 		}
 		else if (current == Section::Code)
 		{
-			if (current == Section::Code)
-			{
-				// std::cout << "  [" << work << "] size=" << instruction_size(work)
-				//           << " offset before=" << code_offset;
-				// code_offset += instruction_size(work);
-				// std::cout << " after=" << code_offset << "\n";
-			}
 			int sz = instruction_size(work);
-			// std::cout << "  INST: [" << work << "] size=" << sz
-			// 		  << " code_offset=" << code_offset;
 			code_offset += sz;
-			// std::cout << " -> " << code_offset << "\n";
 		}
 	}
-
-	// std::cout << "Labels: ";
-	// for (auto &pair : labels)
-	// {
-	// 	std::cout << pair.first << "=" << pair.second << " ";
-	// }
-	// std::cout << "\n";
-
-	// std::cout << "strlen.done=" << labels.find("strlen.done")->second
-	// << " strlen.loop=" << labels.find("strlen.loop")->second<< "\n";
-	// std::cout << "AFTER PASS1: strlen.done=" <<
-	// labels.find("strlen.done")->second<< "\n"; std::cout << "Labels: "; for
-	// (auto& pair : labels) {  std::cout << pair.first << "=" << pair.second <<
-	// "
-	// ";
-	// }
-	// std::cout << "\n";
 
 	auto labels_copy = labels;
 	// Второй проход: генерируем
@@ -820,8 +741,6 @@ void tasm::assemble_file(const std::string &path)
 
 	for (const auto &ln : lines)
 	{
-		// std::cout << "start/assemble_file/strel.done output: "
-		//           << labels_copy.find("strlen.done")->second << std::endl;
 		if (ln == "section .data")
 		{
 			current = Section::Data;
@@ -852,22 +771,20 @@ void tasm::assemble_file(const std::string &path)
 		}
 	}
 }
-void tasm::write_toru(const std::string &path)
-{
+void tasm::write_toru(const std::string &path) const {
 	std::ofstream file(path, std::ios::binary);
-	uint16_t dsize = data_output.size();
-	uint16_t csize = code_output.size();
-	file.put(dsize & 0xFF);
-	file.put(dsize >> 8);
-	file.put(csize & 0xFF);
-	file.put(csize >> 8);
-	file.put(org_addr & 0xFF); // ← ДОБАВЬ ЭТО
-	file.put(org_addr >> 8);   // ← И ЭТО
+	if (!file) throw std::runtime_error("Cannot write to " + path);
 
-	for (uint8_t byte : data_output)
-		file.put(byte);
-	for (uint8_t byte : code_output)
-		file.put(byte);
+	const uint16_t dsize = data_output.size();
+	const uint16_t csize = code_output.size();
+	const uint8_t header[6] = {
+		static_cast<uint8_t>(dsize & 0xFF), static_cast<uint8_t>(dsize >> 8),
+		static_cast<uint8_t>(csize & 0xFF), static_cast<uint8_t>(csize >> 8),
+		static_cast<uint8_t>(org_addr & 0xFF), static_cast<uint8_t>(org_addr >> 8)
+	};
+	file.write(reinterpret_cast<const char*>(header), 6);
+	file.write(reinterpret_cast<const char*>(data_output.data()), dsize);
+	file.write(reinterpret_cast<const char*>(code_output.data()), csize);
 }
 int tasm::data_size(const std::string &line)
 {
@@ -880,14 +797,14 @@ int tasm::data_size(const std::string &line)
 		// db 0x48, 0x65, 0x00
 		std::string rest;
 		std::getline(iss, rest);
-		return std::count(rest.begin(), rest.end(), ',') + 1;
+		return static_cast<int>(std::count(rest.begin(), rest.end(), ',')) + 1;
 	}
 	if (directive == "dw")
 	{
 		// dw 0x1234, 0x5678
 		std::string rest;
 		std::getline(iss, rest);
-		return (std::count(rest.begin(), rest.end(), ',') + 1) * 2;
+		return (static_cast<int>(std::count(rest.begin(), rest.end(), ',')) + 1) * 2;
 	}
 	if (directive == "ds")
 	{
@@ -899,7 +816,7 @@ int tasm::data_size(const std::string &line)
 			str = str.substr(1);
 		if (str.back() == '"')
 			str.pop_back();
-		return str.size() + 1;
+		return static_cast<int>(str.size()) + 1;
 	}
 	if (directive == "resb")
 	{
@@ -924,8 +841,6 @@ int tasm::data_size(const std::string &line)
 
 void tasm::assemble_data(const std::string &line)
 {
-	// std::cout << "start/assemble_data/strel.done output: "
-	//           << labels.find("strlen.done")->second << std::endl;
 	std::istringstream iss(line);
 	std::string directive;
 	iss >> directive;
@@ -999,12 +914,9 @@ void tasm::assemble_data(const std::string &line)
 			data_output.push_back(val);
 		}
 	}
-	// std::cout << "end/assemble_data/strel.done output: " <<
-	// labels.find("strlen.done")->second
-	//           << std::endl;
 }
 
-int tasm::instruction_size(const std::string &line)
+int tasm::instruction_size(const std::string &line) const
 {
 	std::istringstream iss(line);
 	std::string mnemonic;
@@ -1077,13 +989,11 @@ int tasm::instruction_size(const std::string &line)
 	if (mnemonic == "LDB")
 	{
 		// проверим, регистр или число внутри скобок
-		std::string tmp = line;
-		size_t br = tmp.find('[');
-		if (br != std::string::npos)
+		const std::string& tmp = line;
+		if (size_t br = tmp.find('['); br != std::string::npos)
 		{
 			std::string inside = tmp.substr(br + 1);
-			size_t cl = inside.find(']');
-			if (cl != std::string::npos)
+			if (size_t cl = inside.find(']'); cl != std::string::npos)
 				inside = inside.substr(0, cl);
 			inside = clean_token(inside); // убрать запятую и пробелы
 			if (regs.count(inside))
@@ -1093,13 +1003,11 @@ int tasm::instruction_size(const std::string &line)
 	}
 	if (mnemonic == "STB")
 	{
-		std::string tmp = line;
-		size_t br = tmp.find('[');
-		if (br != std::string::npos)
+		const std::string& tmp = line;
+		if (size_t br = tmp.find('['); br != std::string::npos)
 		{
 			std::string inside = tmp.substr(br + 1);
-			size_t cl = inside.find(']');
-			if (cl != std::string::npos)
+			if (size_t cl = inside.find(']'); cl != std::string::npos)
 				inside = inside.substr(0, cl);
 			inside = clean_token(inside);
 			if (regs.count(inside))
@@ -1162,11 +1070,6 @@ std::vector<std::string> tasm::expand_macro(const std::string &line)
 		args.push_back(arg);
 	}
 
-	// std::cout << "MACRO " << name << " args: ";
-	//for (auto &a : args)
-	//	std::cout << "[" << a << "] ";
-	// std::cout << "\n";
-
 	std::vector<std::string> result;
 	for (const auto &body_line : m.body)
 	{
@@ -1174,14 +1077,12 @@ std::vector<std::string> tasm::expand_macro(const std::string &line)
 		for (int i = 0; i < args.size(); i++)
 		{
 			std::string placeholder = "%" + std::to_string(i + 1);
-			// std::cout << "  replacing " << placeholder << " with " << args[i] << " in " << expanded << "\n";
 			size_t pos = expanded.find(placeholder);
 			if (pos != std::string::npos)
 			{
 				expanded.replace(pos, placeholder.length(), args[i]);
 			}
 		}
-		// std::cout << "  result: " << expanded << "\n";
 		result.push_back(expanded);
 	}
 	return result;
@@ -1194,11 +1095,12 @@ void tasm::collect_equ(std::vector<std::string> &lines)
 	for (const auto &ln : lines)
 	{
 		std::istringstream iss(ln);
-		std::string name, equ_directive, value;
+		std::string name, equ_directive;
 		iss >> name >> equ_directive;
 
 		if (equ_directive == "equ")
 		{
+			std::string value;
 			std::getline(iss, value);
 			value.erase(0, value.find_first_not_of(" \t"));
 			value.erase(value.find_last_not_of(" \t") + 1);
@@ -1213,25 +1115,20 @@ void tasm::collect_equ(std::vector<std::string> &lines)
 	lines = new_lines;
 }
 
-std::string tasm::replace_equ(const std::string &line)
+std::string tasm::replace_equ(const std::string &line) const
 {
 	std::string result = line;
-	for (auto &pair : equ_constants)
+	for (const auto & [fst, snd] : equ_constants)
 	{
-		const std::string &name = pair.first;
-		const std::string &value = pair.second;
+		const std::string &name = fst;
+		const std::string &value = snd;
 		size_t pos = 0;
-		// ОТЛАДКА
-		if (result.find(name) != std::string::npos)
-		{
-			// std::cout << "  EQU found '" << name << "' in '" << result << "' -> '" << value << "'\n";
-		}
+
 		while ((pos = result.find(name, pos)) != std::string::npos)
 		{
-			bool valid_start = (pos == 0 || !isalnum(result[pos - 1]));
-			bool valid_end = (pos + name.length() >= result.length() || !isalnum(result[pos + name.length()]));
+			const bool valid_start = (pos == 0 || !isalnum(result[pos - 1]));
 
-			if (valid_start && valid_end)
+			if (const bool valid_end = (pos + name.length() >= result.length() || !isalnum(result[pos + name.length()])); valid_start && valid_end)
 			{
 				result.replace(pos, name.length(), value);
 				pos += value.length();

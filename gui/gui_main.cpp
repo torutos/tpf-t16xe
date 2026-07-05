@@ -44,6 +44,7 @@ int main()
     // Процессор
     t16xe cpu;
     bool cpu_loaded = false;
+    bool cpu_halted = false;
     char input_file[256] = "../examples/hello.tsm";
     char terminal_output[4096] = "";
     static char current_file[256] = "program.tsm";
@@ -117,33 +118,118 @@ int main()
 
                 ImGui::EndTabItem();
             }
-            if (ImGui::BeginTabItem("t16xe machine"))
+            if (ImGui::BeginTabItem("T16XE"))
             {
-                ImGui::InputText("File", current_file, sizeof(current_file));
+                // === Верхняя панель: файл и кнопки ===
+                ImGui::InputText("##termfile", current_file, sizeof(current_file));
+                ImGui::SameLine();
 
-                if (ImGui::Button("Load & Run"))
+                if (ImGui::Button("Load"))
                 {
-                    std::string file = current_file;
                     tasm assembler;
-                    assembler.assemble_file(file);
-                    std::string toru = file.substr(0, file.find_last_of('.')) + ".toru";
+                    assembler.assemble_file(current_file);
+                    std::string toru = std::string(current_file);
+                    toru = toru.substr(0, toru.find_last_of('.')) + ".toru";
                     assembler.write_toru(toru);
 
                     load_toru(cpu, toru);
                     cpu.reset();
                     cpu_loaded = true;
+                    cpu_halted = false;
+                    terminal_output[0] = '\0';
+                    cpu.breakpoint_hit = false;
 
-                    std::ostringstream oss;
-                    auto old_cout = std::cout.rdbuf(oss.rdbuf());
-                    cpu.run();
-                    std::cout.rdbuf(old_cout);
-                    strncpy(terminal_output, oss.str().c_str(), sizeof(terminal_output) - 1);
+                    // Устанавливаем callback вывода
+                    cpu.output_callback = [&terminal_output](char c)
+                    {
+                        int len = strlen(terminal_output);
+                        if (len < 4095)
+                        {
+                            terminal_output[len] = c;
+                            terminal_output[len + 1] = '\0';
+                        }
+                    };
                 }
 
+                ImGui::SameLine();
+                if (ImGui::Button("Run") && cpu_loaded && !cpu_halted)
+                {
+                    cpu.cont(); // выполняет до HLT или брейкпоинта
+                }
+
+                // Step = одна инструкция
+                if (ImGui::Button("Step") && cpu_loaded && !cpu_halted)
+                {
+                    cpu.step();
+                }
+
+                // Stop = сброс
+                if (ImGui::Button("Stop") && cpu_loaded)
+                {
+                    cpu.reset();
+                    terminal_output[0] = '\0';
+                }
+
+                // === Статус ===
+                ImGui::SameLine();
+                if (cpu_loaded)
+                {
+                    if (cpu_halted)
+                        ImGui::TextColored(ImVec4(1, 0.5, 0, 1), "HALTED");
+                    else if (cpu.breakpoint_hit)
+                        ImGui::TextColored(ImVec4(0, 1, 1, 1), "BP HIT");
+                    else
+                        ImGui::TextColored(ImVec4(0, 1, 0, 1), "READY");
+                }
+
+                // === Терминал ===
                 ImGui::Separator();
                 ImGui::Text("Terminal output:");
-                ImGui::BeginChild("Terminal", ImVec2(0, 200), true);
+                ImGui::BeginChild("Terminal", ImVec2(0, 150), true);
                 ImGui::TextUnformatted(terminal_output);
+                ImGui::EndChild();
+
+                // === Брейкпоинты ===
+                ImGui::Separator();
+                ImGui::Text("Breakpoints:");
+
+                static char bp_addr[8] = "";
+                ImGui::PushItemWidth(80);
+                ImGui::InputText("##bpaddr", bp_addr, sizeof(bp_addr),
+                                 ImGuiInputTextFlags_CharsHexadecimal);
+                ImGui::PopItemWidth();
+                ImGui::SameLine();
+
+                if (ImGui::Button("Add"))
+                {
+                    uint16_t addr = (uint16_t)strtol(bp_addr, nullptr, 16);
+                    if (addr > 0 || (bp_addr[0] == '0' && bp_addr[1] == 'x'))
+                    {
+                        cpu.breakpoints.insert(addr);
+                        bp_addr[0] = '\0';
+                    }
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Remove"))
+                {
+                    uint16_t addr = (uint16_t)strtol(bp_addr, nullptr, 16);
+                    cpu.breakpoints.erase(addr);
+                    bp_addr[0] = '\0';
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Clear All"))
+                {
+                    cpu.breakpoints.clear();
+                }
+
+                // Список брейкпоинтов
+                ImGui::BeginChild("bp_list", ImVec2(0, 100), true);
+                for (auto bp : cpu.breakpoints)
+                {
+                    ImGui::Text("0x%04X", bp);
+                }
                 ImGui::EndChild();
 
                 ImGui::EndTabItem();

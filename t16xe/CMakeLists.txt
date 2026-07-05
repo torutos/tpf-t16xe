@@ -4,7 +4,6 @@ add_library(t16xe_lib STATIC
     src/kernel/execute.cpp
     src/kernel/utils.cpp
     src/asm/tasm.cpp
-    src/validator/TasmValidator.cpp
 )
 
 target_include_directories(t16xe_lib PUBLIC src)

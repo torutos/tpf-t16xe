@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <set>
+#include <functional>
 
 enum : uint8_t {
     HLT = 0x00,         // останов
@@ -69,19 +71,23 @@ struct t16xe {
     bool flagN = false; // Negative
     bool flagO = false; // Overflow
     bool flagI = true;  // Interrupt Disable — после сброса прерывания запрещены
-
+    std::set<uint16_t> breakpoints;
+    bool breakpoint_hit = false;
     t16xe() { memory = std::make_unique<uint8_t[]>(MEMORY_SIZE); }
-
+    std::function<void(char)> output_callback;
     void reset();
     void run();
-    uint32_t phys_addr(uint8_t seg, uint16_t offset) const;
-private:
+    [[nodiscard]] static uint32_t phys_addr(uint8_t seg, uint16_t offset);
     bool execute(uint8_t opcode);
+    [[nodiscard]] bool has_breakpoint(const uint16_t addr) const { return breakpoints.count(addr); }
+    bool step();
+    void cont();
+private:
     uint8_t decode_reg8();
     uint16_t decode_reg();
     uint16_t decode_imm16();
     int8_t decode_imm8();
     void write_reg(uint16_t reg, uint16_t val);
-    uint16_t read_reg(uint16_t reg) const;
+    [[nodiscard]] uint16_t read_reg(uint16_t reg) const;
     void update_flags(uint16_t val);
 };
