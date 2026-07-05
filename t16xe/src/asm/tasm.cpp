@@ -611,8 +611,7 @@ void tasm::assemble_file(const std::string &path)
 	{
 		if (!line.empty() && line.back() == '\r')
 			line.pop_back();
-		size_t comment = line.find(';');
-		if (comment != std::string::npos)
+		if (size_t comment = line.find(';'); comment != std::string::npos)
 			line = line.substr(0, comment);
 		if (line.find_first_not_of(" \t") == std::string::npos)
 			continue;
@@ -654,10 +653,9 @@ void tasm::assemble_file(const std::string &path)
 	std::vector<std::string> expanded_lines;
 	for (const auto &ln : lines)
 	{
-		auto expanded = expand_macro(ln);
-		expanded_lines.insert(expanded_lines.end(), expanded.begin(), expanded.end());
+		expand_macro(ln, expanded_lines);
 	}
-	lines = expanded_lines;
+	lines = std::move(expanded_lines);
 
 	// Замена констант (теперь и в раскрытых макросах)
 	for (auto &ln : lines)
@@ -666,7 +664,7 @@ void tasm::assemble_file(const std::string &path)
 	}
 
 	expand_times(lines);
-	Section current = Section::None;
+	auto current = Section::None;
 	uint16_t data_offset = 0;
 	uint16_t code_offset = org_addr; // начинаем с org_addr
 
@@ -695,8 +693,7 @@ void tasm::assemble_file(const std::string &path)
 		}
 
 		std::string work = ln;
-		size_t colon = work.find(':');
-		if (colon != std::string::npos && colon > 0)
+		if (size_t colon = work.find(':'); colon != std::string::npos && colon > 0)
 		{
 			std::string label = work.substr(0, colon);
 			label.erase(0, label.find_first_not_of(" \t"));
@@ -732,8 +729,6 @@ void tasm::assemble_file(const std::string &path)
 			code_offset += sz;
 		}
 	}
-
-	auto labels_copy = labels;
 	// Второй проход: генерируем
 	data_output.clear();
 	code_output.clear();
@@ -1050,42 +1045,35 @@ void tasm::collect_macros(std::vector<std::string> &lines)
 		}
 	}
 
-	lines = new_lines;
+	lines = std::move(new_lines);
 }
 
-std::vector<std::string> tasm::expand_macro(const std::string &line)
-{
+void tasm::expand_macro(const std::string& line, std::vector<std::string>& out) {
 	std::istringstream iss(line);
 	std::string name;
 	iss >> name;
 
-	if (!macros.count(name))
-		return {line};
-
-	Macro &m = macros[name];
-	std::vector<std::string> args;
-	std::string arg;
-	while (iss >> arg)
-	{
-		args.push_back(arg);
+	if (!macros.count(name)) {
+		out.push_back(line);
+		return;
 	}
 
-	std::vector<std::string> result;
-	for (const auto &body_line : m.body)
-	{
+	Macro& m = macros[name];
+	std::vector<std::string> args;
+	std::string arg;
+	while (iss >> arg) args.push_back(arg);
+
+	for (const auto& body_line : m.body) {
 		std::string expanded = body_line;
-		for (int i = 0; i < args.size(); i++)
-		{
+		for (size_t i = 0; i < args.size(); i++) {
 			std::string placeholder = "%" + std::to_string(i + 1);
 			size_t pos = expanded.find(placeholder);
-			if (pos != std::string::npos)
-			{
+			if (pos != std::string::npos) {
 				expanded.replace(pos, placeholder.length(), args[i]);
 			}
 		}
-		result.push_back(expanded);
+		out.push_back(expanded);
 	}
-	return result;
 }
 
 void tasm::collect_equ(std::vector<std::string> &lines)
@@ -1112,7 +1100,7 @@ void tasm::collect_equ(std::vector<std::string> &lines)
 		}
 	}
 
-	lines = new_lines;
+	lines = std::move(new_lines);
 }
 
 std::string tasm::replace_equ(const std::string &line) const
@@ -1173,5 +1161,5 @@ void tasm::expand_times(std::vector<std::string> &lines)
 		}
 	}
 
-	lines = new_lines;
+	lines = std::move(new_lines);
 }

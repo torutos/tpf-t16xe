@@ -30,7 +30,7 @@ public:
     void write_toru(const std::string& path) const;
     [[nodiscard]] int instruction_size(const std::string& line) const;
     void collect_macros(std::vector<std::string>& lines);
-    std::vector<std::string> expand_macro(const std::string& line);
+    void expand_macro(const std::string& line, std::vector<std::string>& out);
     void collect_equ(std::vector<std::string>& lines);
     [[nodiscard]] std::string replace_equ(const std::string& line) const;
     static void expand_times(std::vector<std::string>& lines);

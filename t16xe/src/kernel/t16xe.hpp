@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <iostream>
-#include <memory>
 #include <set>
 #include <functional>
 
@@ -58,7 +57,7 @@ enum : uint8_t {
 
 struct t16xe {
     static constexpr size_t MEMORY_SIZE = 1048576; // 1 МБ
-    std::unique_ptr<uint8_t[]> memory;
+    std::vector<uint8_t> memory;
 
     uint16_t AX = 0, BX = 0, CX = 0, DX = 0;
     uint16_t PC = 0;
@@ -73,8 +72,10 @@ struct t16xe {
     bool flagI = true;  // Interrupt Disable — после сброса прерывания запрещены
     std::set<uint16_t> breakpoints;
     bool breakpoint_hit = false;
-    t16xe() { memory = std::make_unique<uint8_t[]>(MEMORY_SIZE); }
+
+    t16xe() : memory(MEMORY_SIZE) {}
     std::function<void(char)> output_callback;
+    std::function<int()> input_callback;
     void reset();
     void run();
     [[nodiscard]] static uint32_t phys_addr(uint8_t seg, uint16_t offset);

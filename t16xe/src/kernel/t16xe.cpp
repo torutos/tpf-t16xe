@@ -21,6 +21,12 @@ void t16xe::reset()
 
 bool t16xe::step()
 {
+    if (input_callback) {
+        if (const int c = input_callback(); c >= 0) {
+            memory[0xFFF1] = c & 0xFF;   // данные клавиатуры
+            memory[0xFFF0] |= 1;          // флаг "есть данные"
+        }
+    }
     if (!flagI)
     {
         if (memory[0xFFF0] & 1)
