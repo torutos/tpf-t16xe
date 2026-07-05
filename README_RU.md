@@ -72,39 +72,7 @@ t16xe program.tsm
 tpsgui
 ```
 
-Пример программы (Hello World)
-
-```asm
-org 0x0400
-
-section .data
-msg: ds "Hello World"
-
-section .code
-start:
-    MOV BX, #msg        ; загружаем адрес строки
-.loop:
-    LDB AX, [BX]        ; загружаем байт
-    CMP AX, #0          ; проверяем на конец строки
-    JEQ .done
-    STB [0xFFF2], AX    ; выводим символ
-    INC BX
-    JMP .loop
-.done:
-    HLT
-```
-
-Структура проекта
-
-```
-tpf-t16xe/
-├── t16xe/src/kernel/       # Ядро эмулятора
-├── t16xe/src/asm/          # Ассемблер
-├── gui/                    # GUI Studio (ImGui + GLFW)
-│   ├── panels/             # Панели: редактор, эмулятор, регистры, память
-│   └── libs/               # Сторонние библиотеки
-└── tcc/                    # Компилятор (в планах)
-```
+Примеры: [tests](tests)
 
 Ссылки
 
