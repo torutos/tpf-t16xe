@@ -1,38 +1,40 @@
-cmake_minimum_required(VERSION 3.16)
-project(gui)
-
-set(CMAKE_CXX_STANDARD 17)
-
-find_package(OpenGL REQUIRED)
-
-# GLFW через FetchContent
 include(FetchContent)
-FetchContent_Declare(glfw
-    GIT_REPOSITORY https://github.com/glfw/glfw.git
-    GIT_TAG 3.4
-)
-FetchContent_MakeAvailable(glfw)
 
+FetchContent_Declare(
+        glfw
+        URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
 
-# ImGui
-file(GLOB IMGUI_SOURCES
-    imgui/*.cpp
-    imgui/backends/imgui_impl_glfw.cpp
-    imgui/backends/imgui_impl_opengl3.cpp
+add_executable(tpsgui
+        main.cpp
+        app.cpp
+        panels/editor_panel.cpp
+        panels/emulator_panel.cpp
+        panels/registers_panel.cpp
+        panels/memory_panel.cpp
+        libs/TextEditor.cpp
+        libs/tinyfiledialogs.c
+        libs/imgui/imgui.cpp
+        libs/imgui/imgui_draw.cpp
+        libs/imgui/imgui_widgets.cpp
+        libs/imgui/backends/imgui_impl_glfw.cpp
+        libs/imgui/backends/imgui_impl_opengl3.cpp
+        libs/imgui/imgui_tables.cpp
 )
 
-add_library(imgui STATIC ${IMGUI_SOURCES})
-target_include_directories(imgui PUBLIC
-    imgui
-    imgui/backends
-    ${glfw_SOURCE_DIR}/include
-)
+target_include_directories(tpsgui PRIVATE
+        libs
+        libs/imgui
+        ${CMAKE_SOURCE_DIR}/t16xe/src
+        ${glfw_SOURCE_DIR}/include)
 
-# Приложение
-add_executable(gui gui_main.cpp TextEditor.cpp tinyfiledialogs.c)
-target_link_libraries(gui imgui glfw OpenGL::GL t16xe_lib)
-target_include_directories(gui PUBLIC ../t16xe/src)
+target_link_libraries(tpsgui
+        t16xe_lib
+        glfw
+        opengl32
+)

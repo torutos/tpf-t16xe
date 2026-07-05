@@ -24,7 +24,7 @@ int main(const int argc, char *argv[])
         return 1;
     }
 
-    std::string input = argv[1];
+    const std::string input = argv[1];
     const std::string toru = input.substr(0, input.find_last_of('.')) + ".toru";
     
 
