@@ -2,6 +2,19 @@
 
 A fully custom 16-bit processor emulator written in C++17, featuring its own instruction set, assembler, binary executable format, and a graphical debugger. Designed as an educational and experimental platform for low-level programming.
 
+## ⚠️ Work in Progress
+
+This emulator is still under active development. Things that may go wrong:
+
+- Some instructions are missing or may work incorrectly.
+- Interrupts and I/O ports are not fully wired up — keyboard input may not work as expected.
+- Programs that run fine today might break after an update.
+- You may encounter crashes, freezes, or unexpected behavior.
+
+These issues are being worked on. The goal is to stabilize the instruction set and complete the I/O subsystem before the first release.
+
+If something doesn't work, please report it in [Issues](https://github.com/torutos/tpf-t16xe/issues). If you'd rather wait for a polished version, the first release is on the way.
+
 ## Features
 
 ### CPU Emulator
