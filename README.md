@@ -72,19 +72,7 @@ t16xe program.tsm
 tpsgui
 ```
 
-Examples: [tests/](tests)
-
-Project Structure
-
-```
-tpf-t16xe/
-├── t16xe/src/kernel/       # CPU emulator core
-├── t16xe/src/asm/          # Assembler
-├── gui/                    # GUI Studio (ImGui + GLFW)
-│   ├── panels/             # Editor, Emulator, Registers, Memory
-│   └── libs/               # Third-party libraries
-└── tcc/                    # Compiler (planned)
-```
+Examples: [tests](tests)
 
 Links
 
