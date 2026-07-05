@@ -72,27 +72,7 @@ t16xe program.tsm
 tpsgui
 ```
 
-Example Program (Hello World)
-
-```asm
-org 0x0400
-
-section .data
-msg: ds "Hello World"
-
-section .code
-start:
-    MOV BX, #msg        ; load address of string
-.loop:
-    LDB AX, [BX]        ; load byte
-    CMP AX, #0          ; check for null terminator
-    JEQ .done
-    STB [0xFFF2], AX    ; output character
-    INC BX
-    JMP .loop
-.done:
-    HLT
-```
+Examples: [tests/](tests)
 
 Project Structure
 
