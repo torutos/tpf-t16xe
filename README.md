@@ -1,31 +1,103 @@
-# T16XE
+# T16XE — 16-bit CPU Emulator & Toolchain
 
-**!!!ЭМУЛЯТОР НЕ ДОРАБОТАН!!!**
-16-разрядный эмулятор процессора с 1 МБ памяти.
+A fully custom 16-bit processor emulator written in C++17, featuring its own instruction set, assembler, binary executable format, and a graphical debugger. Designed as an educational and experimental platform for low-level programming.
 
-## Возможности
-- 16-битные регистры (AX, BX, CX, DX, SP, PC)
-- Сегментная адресация (CS, DS, SS)
-- 1 МБ адресного пространства
-- 30+ инструкций (арифметика, логика, стек, переходы)
-- Прерывания (INT, IRET, STI, CLI)
-- Порты ввода-вывода
-- Ассемблер с макросами, директивами, локальными метками
-- Формат исполняемых файлов `.toru`
+## Features
 
-## Toolchain
-- `t16xe` — эмулятор процессора
-- `tasm` — ассемблер
+### CPU Emulator
+- 1 MB addressable memory space
+- 5 general-purpose 16-bit registers: AX, BX, CX, DX, SP
+- Segment registers: CS (code), DS (data), SS (stack)
+- Flags: Carry (C), Zero (Z), Negative (N), Overflow (O), Interrupt Disable (I)
+- Hardware interrupts (keyboard via port 0xFFF0/0xFFF1)
+- Software interrupts (INT instruction, vector table at 0x0000-0x03FF)
+- Stack operations (PUSH, POP, CALL, RET)
+- I/O ports for character output (0xFFF2)
 
-## Сборка
+### Assembler (TASM)
+- Two-pass assembler with label resolution
+- Macros with parameters (`%macro`, `%1`, `%2`)
+- EQU constants with expression substitution
+- Local labels (starting with `.`)
+- `times` directive for repetition
+- `%include` for multi-file projects
+- Data directives: `db`, `dw`, `ds`, `resb`, `resw`, `fill`
+- Sections: `.data` and `.code`
+- Custom binary format `.toru` with header (data size, code size, origin address)
+
+### GUI Studio (TPSGUI)
+- Built with ImGui and GLFW
+- Code editor with syntax support (TextEditor)
+- Register viewer (AX, BX, CX, DX, SP, PC, flags)
+- Memory dump viewer (hex + ASCII)
+- Breakpoints (add/remove/clear, pause on hit)
+- Step / Run / Stop execution control
+- Terminal output panel
+- File operations: Open, Save, Save As via native dialogs
+
+### CLI Toolchain
+- Single command: `t16xe program.tsm` — validate, assemble, and run
+- Output callback support for custom frontends
+- Input callback support for keyboard-driven programs
+
+## Building
+
 ```bash
-cd build
-cmake .. -G "Ninja"
-ninja
+cmake -B build
+cmake --build build
 ```
 
-## Ссылки
-```автор
-Те у кого есть возможность и желание помочь в продвижении проекта, пожалуйста, сделайте графическую либу и помогите доработать эмулятор.
+Requirements: C++17, CMake 3.16+, OpenGL (for GUI). All dependencies (ImGui, GLFW) are fetched automatically.
+
+Usage
+
+```bash
+# CLI: assemble and run
+t16xe program.tsm
+
+# GUI: Toru Processor Studio
+tpsgui
 ```
-Дискорд: https://discord.gg/wSbqFkRtE.
+
+Example Program (Hello World)
+
+```asm
+org 0x0400
+
+section .data
+msg: ds "Hello World"
+
+section .code
+start:
+    MOV BX, #msg        ; load address of string
+.loop:
+    LDB AX, [BX]        ; load byte
+    CMP AX, #0          ; check for null terminator
+    JEQ .done
+    STB [0xFFF2], AX    ; output character
+    INC BX
+    JMP .loop
+.done:
+    HLT
+```
+
+Project Structure
+
+```
+tpf-t16xe/
+├── t16xe/src/kernel/       # CPU emulator core
+├── t16xe/src/asm/          # Assembler
+├── gui/                    # GUI Studio (ImGui + GLFW)
+│   ├── panels/             # Editor, Emulator, Registers, Memory
+│   └── libs/               # Third-party libraries
+└── tcc/                    # Compiler (planned)
+```
+
+Links
+
+· Discord: https://discord.gg/wSbqFkRtE
+· Telegram: https://t.me/hobnchkn
+
+License
+
+MIT
