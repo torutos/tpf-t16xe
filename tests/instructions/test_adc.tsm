@@ -1,0 +1,9 @@
+; test_adc.tsm
+org 0x0400
+section .code
+start:
+    MOV AX, #0xFFFE
+    MOV BX, #1
+    ADD AX, BX      ; AX=0xFFFF, C=0
+    ADC AX, BX      ; AX=0xFFFF+1+0=0x0000, C=1
+    HLT

@@ -1,0 +1,9 @@
+; test_sbb.tsm
+org 0x0400
+section .code
+start:
+    MOV AX, #5
+    MOV BX, #2
+    SUB AX, BX      ; AX=3
+    SBB AX, BX      ; AX=3-2-0=1
+    HLT

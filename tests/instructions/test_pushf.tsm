@@ -1,0 +1,9 @@
+; test_pushf.tsm
+org 0x0400
+section .code
+start:
+    MOV AX, #1
+    CMP AX, #1      ; Z=1
+    PUSHF           ; сохраняем флаги
+    POPF            ; восстанавливаем
+    HLT

@@ -1,0 +1,9 @@
+; test_not.tsm
+org 0x0400
+section .code
+start:
+    MOV AX, #0xAAAA
+    NOT AX          ; AX = 0x5555
+    MOV BX, #0
+    NOT BX          ; BX = 0xFFFF
+    HLT

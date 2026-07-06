@@ -1,0 +1,9 @@
+; test_neg.tsm
+org 0x0400
+section .code
+start:
+    MOV AX, #5
+    NEG AX          ; AX = 0xFFFB (-5)
+    MOV BX, #0
+    NEG BX          ; BX = 0 (0 остаётся 0)
+    HLT

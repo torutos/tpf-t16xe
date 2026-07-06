@@ -1,0 +1,12 @@
+org 0x0400
+
+section .code
+start:
+    MOV AX, #5
+    MOV BX, #6
+    MUL BX
+    MOV AX, #0xFFFF
+    MOV BX, #2
+    MUL BX
+
+    HLT
