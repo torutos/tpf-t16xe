@@ -9,14 +9,112 @@
 #include "panels/memory_panel.hpp"
 #include "tinyfiledialogs.h"
 #include <fstream>
+#include <windows.h>
+#include <windowsx.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
+static bool dragging = false;
+static bool resizing = false;
+static int resizeEdge = 0;
+static POINT dragOffset;
+
+static void setResizeCursor(int edge) {
+    LPSTR cursor = IDC_ARROW;
+    if (edge & 1) cursor = IDC_SIZENS;
+    else if (edge & 2) cursor = IDC_SIZENS;
+    if (edge & 4) cursor = IDC_SIZEWE;
+    else if (edge & 8) cursor = IDC_SIZEWE;
+    if ((edge & 1) && (edge & 4)) cursor = IDC_SIZENWSE;
+    if ((edge & 1) && (edge & 8)) cursor = IDC_SIZENESW;
+    if ((edge & 2) && (edge & 4)) cursor = IDC_SIZENESW;
+    if ((edge & 2) && (edge & 8)) cursor = IDC_SIZENWSE;
+    SetCursor(LoadCursor(NULL, cursor));
+}
+
+static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            POINT pt;
+            GetCursorPos(&pt);
+            RECT rect;
+            GetWindowRect(glfwGetWin32Window(window), &rect);
+
+            int edge = 0;
+            if (pt.y - rect.top < 4) edge |= 1;
+            if (rect.bottom - pt.y < 4) edge |= 2;
+            if (pt.x - rect.left < 4) edge |= 4;
+            if (rect.right - pt.x < 4) edge |= 8;
+
+            if (edge != 0) {
+                resizing = true;
+                resizeEdge = edge;
+            } else if (pt.y - rect.top < 40) {
+                dragging = true;
+                dragOffset.x = pt.x - rect.left;
+                dragOffset.y = pt.y - rect.top;
+            }
+        } else {
+            dragging = false;
+            resizing = false;
+        }
+    }
+}
+
+static void cursorPosCallback(GLFWwindow* window, double x, double y) {
+    HWND hwnd = glfwGetWin32Window(window);
+
+    if (dragging || resizing) {
+        POINT pt;
+        GetCursorPos(&pt);
+
+        if (dragging) {
+            SetWindowPos(hwnd, NULL, pt.x - dragOffset.x, pt.y - dragOffset.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        }
+        if (resizing) {
+            RECT rect;
+            GetWindowRect(hwnd, &rect);
+            int w = rect.right - rect.left;
+            int h = rect.bottom - rect.top;
+            int wx = rect.left;
+            int wy = rect.top;
+
+            if (resizeEdge & 4) { w = rect.right - pt.x; wx = pt.x; }
+            if (resizeEdge & 8) { w = pt.x - rect.left; }
+            if (resizeEdge & 1) { h = rect.bottom - pt.y; wy = pt.y; }
+            if (resizeEdge & 2) { h = pt.y - rect.top; }
+
+            if (w < 400) w = 400;
+            if (h < 300) h = 300;
+
+            SetWindowPos(hwnd, NULL, wx, wy, w, h, SWP_NOZORDER);
+        }
+    } else {
+        POINT pt;
+        GetCursorPos(&pt);
+        RECT rect;
+        GetWindowRect(hwnd, &rect);
+
+        int edge = 0;
+        if (pt.y - rect.top < 4) edge |= 1;
+        if (rect.bottom - pt.y < 4) edge |= 2;
+        if (pt.x - rect.left < 4) edge |= 4;
+        if (rect.right - pt.x < 4) edge |= 8;
+
+        setResizeCursor(edge);
+    }
+}
 
 int main() {
     if (!glfwInit()) return 1;
 
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    GLFWwindow* window = glfwCreateWindow(900, 600, "T16XE Studio", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1100, 700, "T16XE Studio", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    glfwSetCursorPosCallback(window, cursorPosCallback);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -24,11 +122,16 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
+    // Увеличиваем размер элементов
+    ImGui::GetStyle().FramePadding = ImVec2(8, 6);
+    ImGui::GetStyle().ItemSpacing = ImVec2(8, 6);
+    ImGui::GetStyle().WindowPadding = ImVec2(8, 8);
+
+    // Увеличиваем шрифт для пунктов меню
+    ImGui::GetIO().FontGlobalScale = 1.0f;
+
     AppState app;
     static char fileBuffer[256] = "program.tsm";
-
-    static bool dragging = false;
-    static int dragOffsetX = 0, dragOffsetY = 0;
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -37,16 +140,24 @@ int main() {
         ImGui::NewFrame();
 
         ImGuiViewport* viewport = ImGui::GetMainViewport();
-        const int titleBarH = 30;
+        const int titleBarH = 40;
 
-        // === Title Bar ===
+        // === Кастомный Title Bar ===
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, titleBarH));
         ImGui::Begin("##TitleBar", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoSavedSettings);
-        if (ImGui::BeginMenu("File")) {
+
+        // Крупные кнопки меню
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10, 6));
+
+        if (ImGui::Button("File")) ImGui::OpenPopup("FilePopup");
+        if (ImGui::BeginPopup("FilePopup")) {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 6));
             if (ImGui::MenuItem("Open")) {
                 const char* filter = "*.tsm;*.tf;*.tc";
                 const char* f = tinyfd_openFileDialog("Open File", "", 1, &filter, "T16XE files", 0);
@@ -78,9 +189,15 @@ int main() {
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit")) glfwSetWindowShouldClose(window, true);
-            ImGui::EndMenu();
+            ImGui::PopStyleVar(2);
+            ImGui::EndPopup();
         }
-        if (ImGui::BeginMenu("Run")) {
+
+        ImGui::SameLine();
+        if (ImGui::Button("Run")) ImGui::OpenPopup("RunPopup");
+        if (ImGui::BeginPopup("RunPopup")) {
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 6));
             if (ImGui::MenuItem("Load")) app.loadProgram(fileBuffer);
             if (ImGui::MenuItem("Run") && app.loaded && !app.halted) app.cpu.cont();
             if (ImGui::MenuItem("Step") && app.loaded && !app.halted) app.cpu.step();
@@ -88,49 +205,32 @@ int main() {
                 app.cpu.reset();
                 app.terminalOutput.clear();
             }
-            ImGui::EndMenu();
+            ImGui::PopStyleVar(2);
+            ImGui::EndPopup();
         }
+
+        ImGui::PopStyleVar(2);
+
         ImGui::SameLine();
-        ImGui::PushItemWidth(120);
+        ImGui::PushItemWidth(160);
         ImGui::InputText("##file", fileBuffer, sizeof(fileBuffer));
         ImGui::PopItemWidth();
 
         ImGui::SameLine();
         if (app.loaded) {
             if (app.halted)
-                ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "HALTED");
+                ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "HALT");
             else if (app.cpu.breakpoint_hit)
-                ImGui::TextColored(ImVec4(0, 1, 1, 1), "BP HIT");
+                ImGui::TextColored(ImVec4(0, 1, 1, 1), "BP");
             else
-                ImGui::TextColored(ImVec4(0, 1, 0, 1), "READY");
+                ImGui::TextColored(ImVec4(0, 1, 0, 1), "OK");
         }
 
-        ImGui::SameLine(ImGui::GetWindowWidth() - 55);
+        ImGui::SameLine(ImGui::GetWindowWidth() - 65);
         if (ImGui::Button("-")) glfwIconifyWindow(window);
         ImGui::SameLine();
         if (ImGui::Button("X")) glfwSetWindowShouldClose(window, true);
 
-        // Перетаскивание
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
-            if (!dragging) {
-                dragging = true;
-                int wx, wy;
-                glfwGetWindowPos(window, &wx, &wy);
-                double mx, my;
-                glfwGetCursorPos(window, &mx, &my);
-                dragOffsetX = wx - (int)mx;
-                dragOffsetY = wy - (int)my;
-            }
-        }
-        if (dragging) {
-            if (ImGui::IsMouseDown(0)) {
-                double mx, my;
-                glfwGetCursorPos(window, &mx, &my);
-                glfwSetWindowPos(window, dragOffsetX + (int)mx, dragOffsetY + (int)my);
-            } else {
-                dragging = false;
-            }
-        }
         ImGui::End();
 
         // === Вкладки ===
