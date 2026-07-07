@@ -5,5 +5,13 @@ start:
     MOV AX, #5
     MOV BX, #2
     SUB AX, BX      ; AX=3
-    SBB AX, BX      ; AX=3-2-0=1
+    SBB AX, BX      ; AX=1
+    CMP AX, #1
+    JEQ sbb_ok
+    MOV AX, #'E'
+    STB [0xFFF2], AX
+    HLT
+sbb_ok:
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

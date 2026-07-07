@@ -233,13 +233,19 @@ int main() {
 
         ImGui::End();
 
-        // === Вкладки ===
+        // === Основная область ===
         ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + titleBarH));
         ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, viewport->WorkSize.y - titleBarH));
         ImGui::Begin("##Main", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
+        // Высота нижней панели
+        float bottomHeight = 0;
+        if (!app.errorMessages.empty()) bottomHeight = 120;
+
+        // Верхние вкладки
+        ImGui::BeginChild("##TopPanel", ImVec2(0, ImGui::GetContentRegionAvail().y - bottomHeight), false);
         if (ImGui::BeginTabBar("Tabs")) {
             if (ImGui::BeginTabItem("Editor")) {
                 RenderEditorPanel(app);
@@ -259,6 +265,15 @@ int main() {
             }
             ImGui::EndTabBar();
         }
+        ImGui::EndChild();
+
+        // Нижняя панель с ошибками
+        if (bottomHeight > 0) {
+            ImGui::BeginChild("##Errors", ImVec2(0, bottomHeight), true);
+            ImGui::TextUnformatted(app.errorMessages.c_str());
+            ImGui::EndChild();
+        }
+
         ImGui::End();
 
         ImGui::Render();

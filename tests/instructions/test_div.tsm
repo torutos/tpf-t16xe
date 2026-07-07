@@ -1,19 +1,15 @@
 org 0x0400
-
 section .code
 start:
-    ; Тест DIV: 100 / 7 = 14, остаток 2
     MOV AX, #100
     MOV BX, #7
-    MOV DX, #0      ; старшая часть делимого = 0
-    DIV BX
-    ; AX = 14 (0x000E), DX = 2
-
-    ; Тест DIV большое число: 0x1234 / 0x10 = 0x0123, остаток 4
-    MOV AX, #0x1234
-    MOV BX, #0x10
-    MOV DX, #0
-    DIV BX
-    ; AX = 0x0123, DX = 4
-
+    DIV AX, BX      ; AX = 100 / 7 = 14
+    CMP AX, #14
+    JEQ div_ok
+    MOV AX, #'E'
+    STB [0xFFF2], AX
+    HLT
+div_ok:
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

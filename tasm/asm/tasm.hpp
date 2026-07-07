@@ -22,9 +22,13 @@ class tasm {
     std::map<std::string, uint16_t> labels;
     std::vector<uint8_t> data_output;
     std::vector<uint8_t> code_output;
-    uint16_t org_addr = 0x0400;
+    uint32_t org_addr = 0x00010000;
     std::string current_global_label;
 public:
+    int error_count = 0;
+    std::vector<std::string> errors;
+
+    bool validate(const std::string& line, int line_num);
     void assemble_line(const std::string& line);
     void assemble_file(const std::string& path);
     void write_toru(const std::string& path) const;

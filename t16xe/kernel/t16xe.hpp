@@ -43,8 +43,20 @@ enum : uint8_t {
     LDB_REG_MEM = 0x23, // загрузить байт из [addr]
     STB_MEM_REG = 0x24, // сохранить байт в [addr],]
     MOV_MEMREG_REG = 0x25,
+    MUL_REG_REG = 0x26,  // MUL reg, reg → DX:AX = AX * reg
+    DIV_REG_REG = 0x27,  // DIV reg → AX = DX:AX / reg, DX = остаток
     JCS = 0x28,
     JCC = 0x29,
+    NOT_REG = 0x2A,      // NOT reg
+    NEG_REG = 0x2B,      // NEG reg
+    PUSHF = 0x2C,        // PUSHF
+    POPF = 0x2D,         // POPF
+    ADC_REG_REG = 0x2E,  // ADC reg, reg (сложение с переносом)
+    SBB_REG_REG = 0x2F,  // SBB reg, reg (вычитание с заёмом)
+    TEST_REG_REG = 0x30, // TEST reg, reg (AND без сохранения)
+    JS = 0x31,           // JS смещение (прыжок если N=1)
+    JNS = 0x32,          // JNS смещение (прыжок если N=0)
+    NOP = 0x33,          // NOP (нет операции)
 };
 
 enum : uint8_t {
@@ -56,37 +68,42 @@ enum : uint8_t {
 };
 
 struct t16xe {
-    static constexpr size_t MEMORY_SIZE = 1048576; // 1 МБ
+    static constexpr size_t MEMORY_SIZE = 32 * 1024 * 1024; // 32 МБ
     std::vector<uint8_t> memory;
 
     uint16_t AX = 0, BX = 0, CX = 0, DX = 0;
     uint16_t PC = 0;
-    uint16_t SP = 0xFFFE;
 
-    uint8_t CS = 0, DS = 0x01, SS = 0;
+    uint16_t SP = 0xFEEF;  // стек (пока оставим в нижней памяти, потом перенесём)
+    uint16_t CS = 0x0010, DS = 0x0010, SS = 0x0010;
 
     bool flagC = false; // Carry
     bool flagZ = false; // Zero
     bool flagN = false; // Negative
     bool flagO = false; // Overflow
-    bool flagI = true;  // Interrupt Disable — после сброса прерывания запрещены
+    bool flagI = true;  // Interrupt
     std::set<uint16_t> breakpoints;
     bool breakpoint_hit = false;
+
+    static constexpr uint32_t ORG_MIN = 0x00010000;  // начало ОЗУ
+    static constexpr uint32_t RAM_START = 0x00010000;    // начало ОЗУ
+    static constexpr uint32_t RAM_END = 0x01FFEFFF;      // конец ОЗУ
+    static constexpr uint32_t STACK_TOP = 0x01FFEFFF;    // вершина стека
 
     t16xe() : memory(MEMORY_SIZE) {}
     std::function<void(char)> output_callback;
     std::function<int()> input_callback;
     void reset();
     void run();
-    [[nodiscard]] static uint32_t phys_addr(uint8_t seg, uint16_t offset);
+    [[nodiscard]] static uint32_t phys_addr(uint16_t seg, uint16_t offset);
     bool execute(uint8_t opcode);
     [[nodiscard]] bool has_breakpoint(const uint16_t addr) const { return breakpoints.count(addr); }
     bool step();
     void cont();
 private:
-    uint8_t decode_reg8();
     uint16_t decode_reg();
     uint16_t decode_imm16();
+    uint32_t decode_imm32();
     int8_t decode_imm8();
     void write_reg(uint16_t reg, uint16_t val);
     [[nodiscard]] uint16_t read_reg(uint16_t reg) const;

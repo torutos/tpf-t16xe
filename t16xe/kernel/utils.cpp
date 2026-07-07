@@ -1,14 +1,12 @@
 #include "t16xe.hpp"
 
-uint32_t t16xe::phys_addr(const uint8_t seg, const uint16_t offset) {
-        if (offset >= 0xFFF0) {
-            return offset; // порты
-        }
+uint32_t t16xe::phys_addr(uint16_t seg, uint16_t offset)
+{
+    uint32_t addr = ((uint32_t)seg << 16) | offset;
+    if (addr >= 0x1FFFFF0) return addr; // порты
+    return addr;
+}
 
-        return (static_cast<uint32_t>(seg) << 16) | offset;
-    }
-
-uint8_t t16xe::decode_reg8() { return memory[phys_addr(CS, PC++)]; }
 
 uint16_t t16xe::decode_reg() { return memory[phys_addr(CS, PC++)]; }
 
@@ -17,6 +15,14 @@ uint16_t t16xe::decode_imm16()
     const auto lo = memory[phys_addr(CS, PC++)];
     const auto hi = memory[phys_addr(CS, PC++)];
     return (hi << 8) | lo;
+}
+
+uint32_t t16xe::decode_imm32() {
+    uint32_t lo = memory[phys_addr(CS, PC++)];
+    uint32_t mid1 = memory[phys_addr(CS, PC++)];
+    uint32_t mid2 = memory[phys_addr(CS, PC++)];
+    uint32_t hi = memory[phys_addr(CS, PC++)];
+    return lo | (mid1 << 8) | (mid2 << 16) | (hi << 24);
 }
 
 int8_t t16xe::decode_imm8()

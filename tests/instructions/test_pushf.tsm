@@ -4,6 +4,14 @@ section .code
 start:
     MOV AX, #1
     CMP AX, #1      ; Z=1
-    PUSHF           ; сохраняем флаги
-    POPF            ; восстанавливаем
+    PUSHF
+    POPF
+    ; флаги должны сохраниться, Z всё ещё 1
+    JEQ pushf_ok
+    MOV AX, #'E'
+    STB [0xFFF2], AX
+    HLT
+pushf_ok:
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

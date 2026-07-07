@@ -14,10 +14,20 @@ struct AppState {
     std::string currentFile = "program.tsm";
     std::string terminalOutput;
     bool terminalUpdated = false;
-
+    std::string errorMessages;
     void loadProgram(const std::string& path) {
         tasm assembler;
         assembler.assemble_file(path);
+
+        errorMessages.clear();
+        for (auto& e : assembler.errors) {
+            errorMessages += e + "\n";
+        }
+
+        if (assembler.error_count > 0) {
+            loaded = false;
+            return;
+        }
         std::string toru = path.substr(0, path.find_last_of('.')) + ".toru";
         assembler.write_toru(toru);
 
@@ -31,9 +41,6 @@ struct AppState {
         cpu.output_callback = [this](char c) {
             terminalOutput += c;
             terminalUpdated = true;
-        };
-        cpu.output_callback = [this](char c) {
-            terminalOutput += c;
         };
     }
 };

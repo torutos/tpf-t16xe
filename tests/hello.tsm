@@ -1,20 +1,19 @@
-section .data
-    world: ds "Hello World"
 
 section .code
-    org 0x0400
-    CALL main
-    HLT
-
-main:
-    MOV BX, world
-loop:
+start:
+    MOV BX, msg
+.loop:
     LDB AX, [BX]
     CMP AX, #0
-    JEQ done
-    STB [0xFFF2], AX
+    JEQ .done
+    STB [0x1FFFFF2], AX
     INC BX
-    JMP loop
-done:
-    RET
+    JMP .loop
+.done:
+    HLT
+    
+section .data
+msg: ds "Hello World"
+
+
 

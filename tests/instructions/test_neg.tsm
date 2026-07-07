@@ -4,6 +4,12 @@ section .code
 start:
     MOV AX, #5
     NEG AX          ; AX = 0xFFFB (-5)
-    MOV BX, #0
-    NEG BX          ; BX = 0 (0 остаётся 0)
+    CMP AX, #0xFFFB
+    JEQ neg_ok
+    MOV AX, #'E'
+    STB [0xFFF2], AX
+    HLT
+neg_ok:
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

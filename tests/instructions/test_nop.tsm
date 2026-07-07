@@ -6,5 +6,6 @@ start:
     NOP
     NOP
     NOP
-    MOV BX, #2
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

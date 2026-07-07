@@ -1,24 +1,21 @@
 #include "t16xe.hpp"
 
-void t16xe::reset()
-{
+void t16xe::reset() {
     AX = BX = CX = DX = 0;
     PC = 0;
-    SP = 0xFFFE;
-    CS = 0;
-    DS = 0x01;
-    SS = 0;
+    SP = 0xFEEF;
+    CS = 0x10;
+    DS = 0x10;
+    SS = 0x10;
     flagC = flagZ = flagN = flagO = false;
-    flagI = true; // прерывания запрещены
+    flagI = true;
 
-    // Вектор сброса: читаем 4 байта из конца памяти
-    const uint32_t vec = phys_addr(0, 0xFFF4); // CS=0, offset=0xFFF0
-    const uint16_t lo = memory[vec] | (memory[vec + 1] << 8);
-    const uint16_t hi = memory[vec + 2] | (memory[vec + 3] << 8);
-    CS = hi; // сегмент
-    PC = lo; // смещение
+    // Вектор сброса в конце 32 МБ
+    uint32_t vec = 0x1FFFFF4;
+    uint32_t lo = memory[vec] | (memory[vec+1]<<8) | (memory[vec+2]<<16) | (memory[vec+3]<<24);
+    CS = (lo >> 16) & 0xFFFF;
+    PC = lo & 0xFFFF;
 }
-
 bool t16xe::step()
 {
     if (input_callback) {

@@ -4,6 +4,12 @@ section .code
 start:
     MOV AX, #0xAAAA
     NOT AX          ; AX = 0x5555
-    MOV BX, #0
-    NOT BX          ; BX = 0xFFFF
+    CMP AX, #0x5555
+    JEQ not_ok
+    MOV AX, #'E'
+    STB [0xFFF2], AX
+    HLT
+not_ok:
+    MOV AX, #'0'
+    STB [0xFFF2], AX
     HLT

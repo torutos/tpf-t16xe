@@ -1,0 +1,29 @@
+; sys.tasm — системные константы и макросы для Toru16
+%define PORT_KBD_STATUS 0xFFF0
+%define PORT_KBD_DATA   0xFFF1
+%define PORT_OUTPUT     0x1FFFFF2
+
+; Макрос для вывода символа
+%macro sysout 1
+    PUSH AX
+    MOV AX, %1
+    STB [PORT_OUTPUT], AX
+    POP AX
+%endmacro
+
+; Макрос для вывода строки
+%macro sysprint 1
+    PUSH AX
+    PUSH BX
+    MOV BX, %1
+.loop:
+    LDB AX, [BX]
+    CMP AX, #0
+    JEQ .done
+    STB [PORT_OUTPUT], AX
+    INC BX
+    JMP .loop
+.done:
+    POP BX
+    POP AX
+%endmacro
