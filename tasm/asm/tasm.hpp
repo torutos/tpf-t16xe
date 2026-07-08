@@ -19,7 +19,7 @@ class tasm {
     enum class Section { None, Data, Code };
     std::map<std::string, Macro> macros;
     std::map<std::string, std::string> equ_constants;
-    std::map<std::string, uint16_t> labels;
+    std::map<std::string, uint32_t> labels;
     std::vector<uint8_t> data_output;
     std::vector<uint8_t> code_output;
     uint32_t org_addr = 0x00010000;

@@ -14,7 +14,7 @@ bool t16xe::execute(uint8_t opcode)
     case MOV_REG_IMM:
         {
             auto reg = decode_reg(); // читаем код регистра
-            auto val = decode_imm16(); // читаем 16-битное значение
+            auto val = decode_imm32(); // читаем 16-битное значение
             write_reg(reg, val);
             update_flags(val);
             break;
@@ -85,9 +85,7 @@ bool t16xe::execute(uint8_t opcode)
         }
 
     case JMP: {
-            auto seg = decode_imm16();   // или убрать сегмент
             auto off = decode_imm32();   // 32-битный адрес
-            CS = seg;
             PC = off;
             break;
     }
@@ -115,8 +113,7 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
 
-    case MOV_REG_MEM:
-        {
+    case MOV_REG_MEM: {
             auto reg = decode_reg();
             auto off = decode_imm32();
             auto addr = phys_addr(DS, off);
@@ -126,26 +123,23 @@ bool t16xe::execute(uint8_t opcode)
             write_reg(reg, val);
             update_flags(val);
             break;
-        }
+    }
 
-    case MOV_MEM_REG:
-        {
+    case MOV_MEM_REG: {
             auto off = decode_imm32();
             auto reg = decode_reg();
             auto val = read_reg(reg);
-            if (off == 0x1FFFFF2)
-            {
-                if (output_callback)
-                    output_callback(static_cast<char>(val & 0xFF));
-                else
-                    std::cout << static_cast<char>(val & 0xFF);
+            if (off == 0x1FFFFF2) {
+                if (output_callback) output_callback(static_cast<char>(val & 0xFF));
+                else std::cout << static_cast<char>(val & 0xFF);
                 std::cout.flush();
+                break;
             }
             auto addr = phys_addr(DS, off);
             memory[addr] = val & 0xFF;
             memory[addr + 1] = val >> 8;
             break;
-        }
+    }
 
     case INC_REG:
         {
@@ -231,27 +225,24 @@ bool t16xe::execute(uint8_t opcode)
             flagC = (val & (1 << (shift - 1))) != 0; // последний выдвинутый бит
             break;
         }
-    case CALL:
-        {
+    case CALL: {
             auto seg = decode_imm16();
-            auto off = decode_imm16();
+            auto off = decode_imm32();
 
-            // Сохраняем CS
             SP -= 2;
             auto addr = phys_addr(SS, SP);
-            memory[addr] = CS;
-            memory[addr + 1] = 0;
+            memory[addr] = CS & 0xFF;
+            memory[addr + 1] = (CS >> 8) & 0xFF;
 
-            // Сохраняем PC
             SP -= 2;
             addr = phys_addr(SS, SP);
             memory[addr] = PC & 0xFF;
-            memory[addr + 1] = PC >> 8;
+            memory[addr + 1] = (PC >> 8) & 0xFF;
 
             CS = seg;
             PC = off;
             break;
-        }
+    }
     case RET:
         {
             auto addr = phys_addr(SS, SP);
@@ -266,7 +257,7 @@ bool t16xe::execute(uint8_t opcode)
     case ADD_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto result = read_reg(reg) + imm;
             write_reg(reg, result);
             update_flags(result);
@@ -276,7 +267,7 @@ bool t16xe::execute(uint8_t opcode)
     case SUB_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto a = read_reg(reg);
             auto result = a - imm;
             write_reg(reg, result);
@@ -287,7 +278,7 @@ bool t16xe::execute(uint8_t opcode)
     case CMP_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto result = read_reg(reg) - imm;
             update_flags(result);
             flagC = (read_reg(reg) >= imm);
@@ -296,7 +287,7 @@ bool t16xe::execute(uint8_t opcode)
     case AND_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto result = read_reg(reg) & imm;
             write_reg(reg, result);
             update_flags(result);
@@ -306,7 +297,7 @@ bool t16xe::execute(uint8_t opcode)
     case OR_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto result = read_reg(reg) | imm;
             write_reg(reg, result);
             update_flags(result);
@@ -316,7 +307,7 @@ bool t16xe::execute(uint8_t opcode)
     case XOR_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm16();
+            auto imm = decode_imm32();
             auto result = read_reg(reg) ^ imm;
             write_reg(reg, result);
             update_flags(result);
@@ -412,32 +403,28 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
 
-    case LDB_REG_MEM:
-        {
+    case LDB_REG_MEM: {
             auto reg = decode_reg();
             auto off = decode_imm32();
             auto addr = phys_addr(DS, off);
             write_reg(reg, memory[addr]);
             update_flags(memory[addr]);
             break;
-        }
-    case STB_MEM_REG:
-        {
+    }
+    case STB_MEM_REG: {
             auto off = decode_imm32();
             auto reg = decode_reg();
             auto val = read_reg(reg) & 0xFF;
-            if (off == 0x1FFFFF2)
-            {
-                if (output_callback)
-                    output_callback(static_cast<char>(val & 0xFF));
-                else
-                    std::cout << static_cast<char>(val & 0xFF);
+            if (off == 0x1FFFFF2) {
+                if (output_callback) output_callback(static_cast<char>(val & 0xFF));
+                else std::cout << static_cast<char>(val & 0xFF);
                 std::cout.flush();
+                break;
             }
             auto addr = phys_addr(DS, off);
             memory[addr] = val;
             break;
-        }
+    }
     case MOV_MEMREG_REG:
         {
             // 0x25

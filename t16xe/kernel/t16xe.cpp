@@ -4,9 +4,9 @@ void t16xe::reset() {
     AX = BX = CX = DX = 0;
     PC = 0;
     SP = 0xFEEF;
-    CS = 0x10;
-    DS = 0x10;
-    SS = 0x10;
+    CS = 0x0001;
+    DS = 0x0001;
+    SS = 0x0001;
     flagC = flagZ = flagN = flagO = false;
     flagI = true;
 

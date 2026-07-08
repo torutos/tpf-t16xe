@@ -75,7 +75,7 @@ struct t16xe {
     uint16_t PC = 0;
 
     uint16_t SP = 0xFEEF;  // стек (пока оставим в нижней памяти, потом перенесём)
-    uint16_t CS = 0x0010, DS = 0x0010, SS = 0x0010;
+    uint16_t CS = 0x0001, DS = 0x0001, SS = 0x0001;
 
     bool flagC = false; // Carry
     bool flagZ = false; // Zero

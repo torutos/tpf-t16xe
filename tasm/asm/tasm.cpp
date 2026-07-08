@@ -220,7 +220,6 @@ void tasm::assemble_line(const std::string &line)
         else
             addr = safe_stoi(arg);
         code_output.push_back(0x08);
-        code_output.push_back(0); // seg = 0
         code_output.push_back(addr & 0xFF);
         code_output.push_back((addr >> 8) & 0xFF);
         code_output.push_back((addr >> 16) & 0xFF);
@@ -756,7 +755,7 @@ int tasm::instruction_size(const std::string &line) const
     }
 
     // JMP/CALL — 6 байт
-    if (mnemonic == "JMP" || mnemonic == "CALL") return 6;
+    if (mnemonic == "JMP" || mnemonic == "CALL") return 5;
 
     return 0;
 }
