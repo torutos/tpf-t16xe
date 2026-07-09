@@ -1,0 +1,9 @@
+org 0x00010000
+
+section .code
+start:
+    MOV AX, #'!'
+    STB [0x1FFFFF2], AX
+    MOV AX, #0x0A
+    STB [0x1FFFFF2], AX
+    HLT

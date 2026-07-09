@@ -1,0 +1,17 @@
+org 0x00010000
+
+%macro sysout 1
+    PUSH AX
+    MOV AX, %1
+    STB [0x1FFFFF2], AX
+    POP AX
+%endmacro
+
+section .code
+start:
+    sysout #'H'
+    sysout #'e'
+    sysout #'l'
+    sysout #'l'
+    sysout #'o'
+    HLT

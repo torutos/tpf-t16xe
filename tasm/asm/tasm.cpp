@@ -53,7 +53,7 @@ void tasm::assemble_line(const std::string &line)
     {
         code_output.push_back(0x00);
     }
-        else if (mnemonic == "MOV")
+    else if (mnemonic == "MOV")
     {
         std::string dst, src;
         iss >> dst >> src;
@@ -499,7 +499,6 @@ void tasm::assemble_file(const std::string &path)
     for (size_t i = 0; i < lines.size(); i++)
         validate(lines[i], static_cast<int>(i) + 1);
     if (error_count > 0) return;
-    errors.push_back("DEBUG: org search, lines=" + std::to_string(lines.size()));
     // Читаем org
     for (const auto &ln : lines)
     {
@@ -513,7 +512,6 @@ void tasm::assemble_file(const std::string &path)
             break;
         }
     }
-        errors.push_back("DEBUG: org_addr=" + std::to_string(org_addr));
     // Первый проход: считаем размеры и собираем метки
     Section current = Section::None;
     uint32_t code_size = 0;

@@ -1,3 +1,4 @@
+// main.cpp
 #include <windows.h>
 #include <windowsx.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
@@ -8,6 +9,8 @@
 #include <GLFW/glfw3native.h>
 #include "app.hpp"
 #include <string>
+#include <sstream>
+#include <fstream>
 
 static bool dragging = false;
 static bool resizing = false;
@@ -30,72 +33,46 @@ static void setResizeCursor(int edge) {
 static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
         if (action == GLFW_PRESS) {
-            POINT pt;
-            GetCursorPos(&pt);
-            RECT rect;
-            GetWindowRect(glfwGetWin32Window(window), &rect);
-
+            POINT pt; GetCursorPos(&pt);
+            RECT rect; GetWindowRect(glfwGetWin32Window(window), &rect);
             int edge = 0;
             if (pt.y - rect.top < 4) edge |= 1;
             if (rect.bottom - pt.y < 4) edge |= 2;
             if (pt.x - rect.left < 4) edge |= 4;
             if (rect.right - pt.x < 4) edge |= 8;
-
-            if (edge != 0) {
-                resizing = true;
-                resizeEdge = edge;
-            } else if (pt.y - rect.top < 40) {
+            if (edge != 0) { resizing = true; resizeEdge = edge; }
+            else if (pt.y - rect.top < 40) {
                 dragging = true;
                 dragOffset.x = pt.x - rect.left;
                 dragOffset.y = pt.y - rect.top;
             }
-        } else {
-            dragging = false;
-            resizing = false;
-        }
+        } else { dragging = false; resizing = false; }
     }
 }
 
 static void cursorPosCallback(GLFWwindow* window, double x, double y) {
     HWND hwnd = glfwGetWin32Window(window);
-
     if (dragging || resizing) {
-        POINT pt;
-        GetCursorPos(&pt);
-
-        if (dragging) {
-            SetWindowPos(hwnd, NULL, pt.x - dragOffset.x, pt.y - dragOffset.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-        }
+        POINT pt; GetCursorPos(&pt);
+        if (dragging) SetWindowPos(hwnd, NULL, pt.x - dragOffset.x, pt.y - dragOffset.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
         if (resizing) {
-            RECT rect;
-            GetWindowRect(hwnd, &rect);
-            int w = rect.right - rect.left;
-            int h = rect.bottom - rect.top;
-            int wx = rect.left;
-            int wy = rect.top;
-
+            RECT rect; GetWindowRect(hwnd, &rect);
+            int w = rect.right - rect.left, h = rect.bottom - rect.top, wx = rect.left, wy = rect.top;
             if (resizeEdge & 4) { w = rect.right - pt.x; wx = pt.x; }
             if (resizeEdge & 8) { w = pt.x - rect.left; }
             if (resizeEdge & 1) { h = rect.bottom - pt.y; wy = pt.y; }
             if (resizeEdge & 2) { h = pt.y - rect.top; }
-
-            if (w < 400) w = 400;
-            if (h < 300) h = 300;
-
+            if (w < 400) w = 400; if (h < 300) h = 300;
             SetWindowPos(hwnd, NULL, wx, wy, w, h, SWP_NOZORDER);
         }
     } else {
-        POINT pt;
-        GetCursorPos(&pt);
-        RECT rect;
-        GetWindowRect(hwnd, &rect);
-
+        POINT pt; GetCursorPos(&pt);
+        RECT rect; GetWindowRect(hwnd, &rect);
         int edge = 0;
         if (pt.y - rect.top < 4) edge |= 1;
         if (rect.bottom - pt.y < 4) edge |= 2;
         if (pt.x - rect.left < 4) edge |= 4;
         if (rect.right - pt.x < 4) edge |= 8;
-
         setResizeCursor(edge);
     }
 }
@@ -103,23 +80,20 @@ static void cursorPosCallback(GLFWwindow* window, double x, double y) {
 int main(int argc, char* argv[]) {
     std::string diskImage;
     std::string bootFile;
+    bool autoBoot = false;
 
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
-        if (arg.rfind("-d=", 0) == 0) {
-            diskImage = arg.substr(3);
-        } else if (arg.size() > 5 && arg.substr(arg.size() - 5) == ".toru") {
-            bootFile = arg;
-        }
+        if (arg.rfind("-d=", 0) == 0) diskImage = arg.substr(3);
+        else if (arg == "-boot") autoBoot = true;
+        else if (arg.size() > 5 && arg.substr(arg.size() - 5) == ".toru") bootFile = arg;
     }
 
     if (!glfwInit()) return 1;
-
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     GLFWwindow* window = glfwCreateWindow(800, 600, "Toru16", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
-
     glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetCursorPosCallback(window, cursorPosCallback);
 
@@ -129,19 +103,30 @@ int main(int argc, char* argv[]) {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
+    // Серый стиль
+    ImGui::StyleColorsDark();
     ImGui::GetStyle().FramePadding = ImVec2(8, 6);
     ImGui::GetStyle().ItemSpacing = ImVec2(8, 6);
+    ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+    ImGui::GetStyle().Colors[ImGuiCol_Text] = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 
     Toru16App app;
 
-    if (!diskImage.empty()) {
-        app.loadDisk(diskImage);
+    if (!diskImage.empty()) app.loadDisk(diskImage);
+    if (!app.diskLoaded) {
+        std::ifstream testDisk("c.tdsk");
+        if (testDisk) { testDisk.close(); app.loadDisk("c.tdsk"); }
+        else app.createDisk("c.tdsk");
     }
-    if (!bootFile.empty()) {
-        app.loadProgram(bootFile);
-    }
+    if (!bootFile.empty()) app.loadProgram(bootFile);
 
-    app.start();
+    if (autoBoot) {
+        for (auto& f : app.files) {
+            if (f.bootable) { app.loadFromDisk(f.name); app.bootFromDisk(); break; }
+        }
+    } else {
+        app.start();
+    }
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
@@ -158,7 +143,6 @@ int main(int argc, char* argv[]) {
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
                      ImGuiWindowFlags_NoSavedSettings);
-
         if (ImGui::Button("Machine")) ImGui::OpenPopup("MachinePopup");
         if (ImGui::BeginPopup("MachinePopup")) {
             if (ImGui::MenuItem("Restart")) app.start();
@@ -168,7 +152,6 @@ int main(int argc, char* argv[]) {
             if (ImGui::MenuItem("Quit")) glfwSetWindowShouldClose(window, true);
             ImGui::EndPopup();
         }
-
         ImGui::SameLine(ImGui::GetWindowWidth() - 55);
         if (ImGui::Button("-")) glfwIconifyWindow(window);
         ImGui::SameLine();
@@ -177,24 +160,21 @@ int main(int argc, char* argv[]) {
 
         if (app.running && !app.paused) {
             for (int i = 0; i < 1000 && app.running; i++) {
-                if (!app.cpu.step()) {
-                    app.running = false;
-                }
+                if (!app.cpu.step()) app.running = false;
             }
         }
 
         ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + titleBarH));
         ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, viewport->WorkSize.y - titleBarH));
         ImGui::Begin("Terminal", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoMove);
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
         ImGui::BeginChild("##output", ImVec2(0, ImGui::GetContentRegionAvail().y - 30), true);
         ImGui::TextUnformatted(app.terminalOutput.c_str());
-        if (app.outputUpdated) {
-            ImGui::SetScrollHereY(1.0f);
-            app.outputUpdated = false;
+        if (ImGui::IsWindowHovered() && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C)) {
+            ImGui::SetClipboardText(app.terminalOutput.c_str());
         }
+        if (app.outputUpdated) { ImGui::SetScrollHereY(1.0f); app.outputUpdated = false; }
         ImGui::EndChild();
 
         static char inputBuf[256] = "";
@@ -212,11 +192,10 @@ int main(int argc, char* argv[]) {
             inputBuf[0] = '\0';
             app.executeCommand(cmd);
         }
-
         ImGui::End();
 
         ImGui::Render();
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);
