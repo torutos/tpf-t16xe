@@ -17,5 +17,10 @@ find_package(OpenGL QUIET)
 if(OpenGL_FOUND)
     if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/gui/CMakeLists.txt)
         add_subdirectory(gui)
+
+    endif()
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/toru16/CMakeLists.txt)
+        add_subdirectory(toru16)
+
     endif()
 endif()

@@ -226,7 +226,6 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
     case CALL: {
-            auto seg = decode_imm16();
             auto off = decode_imm32();
 
             SP -= 2;
@@ -239,7 +238,6 @@ bool t16xe::execute(uint8_t opcode)
             memory[addr] = PC & 0xFF;
             memory[addr + 1] = (PC >> 8) & 0xFF;
 
-            CS = seg;
             PC = off;
             break;
     }
@@ -557,7 +555,29 @@ bool t16xe::execute(uint8_t opcode)
         {
             break;
         }
-
+        case MOV_SEG_REG: {
+                auto seg = decode_reg();  // какой сегмент (0=CS, 1=DS, 2=SS)
+                auto reg = decode_reg();  // из какого регистра
+                uint16_t val = read_reg(reg);
+                switch (seg) {
+                case 0: CS = val; break;
+                case 1: DS = val; break;
+                case 2: SS = val; break;
+                }
+                break;
+        }
+        case MOV_REG_SEG: {
+                auto reg = decode_reg();  // куда
+                auto seg = decode_reg();  // откуда
+                uint16_t val = 0;
+                switch (seg) {
+                case 0: val = CS; break;
+                case 1: val = DS; break;
+                case 2: val = SS; break;
+                }
+                write_reg(reg, val);
+                break;
+        }
     default:
         {
             std::cerr << "Runtime error: unknown opcode 0x" << std::hex << static_cast<int>(opcode)

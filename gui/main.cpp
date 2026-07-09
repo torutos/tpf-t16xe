@@ -199,7 +199,10 @@ int main() {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 6));
             if (ImGui::MenuItem("Load")) app.loadProgram(fileBuffer);
-            if (ImGui::MenuItem("Run") && app.loaded && !app.halted) app.cpu.cont();
+            if (ImGui::MenuItem("Run") && app.loaded && !app.halted){
+                app.cpu.reset();
+                app.cpu.cont();
+            }
             if (ImGui::MenuItem("Step") && app.loaded && !app.halted) app.cpu.step();
             if (ImGui::MenuItem("Stop") && app.loaded) {
                 app.cpu.reset();

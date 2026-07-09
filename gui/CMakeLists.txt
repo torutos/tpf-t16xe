@@ -16,19 +16,19 @@ add_executable(tpsgui
         panels/emulator_panel.cpp
         panels/registers_panel.cpp
         panels/memory_panel.cpp
-        libs/TextEditor.cpp
-        libs/tinyfiledialogs.c
-        libs/imgui/imgui.cpp
-        libs/imgui/imgui_draw.cpp
-        libs/imgui/imgui_widgets.cpp
-        libs/imgui/imgui_tables.cpp
-        libs/imgui/backends/imgui_impl_glfw.cpp
-        libs/imgui/backends/imgui_impl_opengl3.cpp
+        ../libs/TextEditor.cpp
+        ../libs/tinyfiledialogs.c
+        ../libs/imgui/imgui.cpp
+        ../libs/imgui/imgui_draw.cpp
+        ../libs/imgui/imgui_widgets.cpp
+        ../libs/imgui/imgui_tables.cpp
+        ../libs/imgui/backends/imgui_impl_glfw.cpp
+        ../libs/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 target_include_directories(tpsgui PRIVATE
-        libs
-        libs/imgui
+        ../libs
+        ../libs/imgui
         ${CMAKE_SOURCE_DIR}/t16xe/
         ${CMAKE_SOURCE_DIR}/tasm/
         ${glfw_SOURCE_DIR}/include

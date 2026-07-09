@@ -1,0 +1,34 @@
+
+	org 0x000400
+
+section .code
+bios_start:
+    MOV SP, #0xFEFF
+
+    MOV BX, msg1
+    CALL print
+    MOV AX, #0x0A
+    STB [0x1FFFFF2], AX
+    MOV BX, msg2
+    CALL print
+    MOV AX, #0x0A
+    STB [0x1FFFFF2], AX
+    HLT
+
+print:
+    PUSH AX
+.loop:
+    LDB AX, [BX]
+    CMP AX, #0
+    JEQ .done
+    STB [0x1FFFFF2], AX
+    INC BX
+    JMP .loop
+.done:
+    POP AX
+    RET
+
+section .data
+msg1: ds "Toru16 BIOS v0.1"
+msg2: ds "No bootable disk found."
+

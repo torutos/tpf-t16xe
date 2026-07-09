@@ -57,6 +57,8 @@ enum : uint8_t {
     JS = 0x31,           // JS смещение (прыжок если N=1)
     JNS = 0x32,          // JNS смещение (прыжок если N=0)
     NOP = 0x33,          // NOP (нет операции)
+    MOV_REG_SEG = 0x34,  // MOV reg, seg
+    MOV_SEG_REG = 0x35,  // MOV seg, reg
 };
 
 enum : uint8_t {

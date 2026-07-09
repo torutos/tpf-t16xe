@@ -53,14 +53,51 @@ void tasm::assemble_line(const std::string &line)
     {
         code_output.push_back(0x00);
     }
-    else if (mnemonic == "MOV")
+        else if (mnemonic == "MOV")
     {
         std::string dst, src;
         iss >> dst >> src;
         dst = clean_token(dst);
         src = clean_token(src);
 
-        if (src[0] == '#' || src[0] == '\'')
+        // MOV CS, reg
+        if (dst == "CS") {
+            code_output.push_back(0x35);
+            code_output.push_back(0); // CS
+            code_output.push_back(regs[src]);
+        }
+        // MOV DS, reg
+        else if (dst == "DS") {
+            code_output.push_back(0x35);
+            code_output.push_back(1); // DS
+            code_output.push_back(regs[src]);
+        }
+        // MOV SS, reg
+        else if (dst == "SS") {
+            code_output.push_back(0x35);
+            code_output.push_back(2); // SS
+            code_output.push_back(regs[src]);
+        }
+        // MOV reg, CS
+        else if (src == "CS") {
+            code_output.push_back(0x34);
+            code_output.push_back(regs[dst]);
+            code_output.push_back(0); // CS
+        }
+        // MOV reg, DS
+        else if (src == "DS") {
+            code_output.push_back(0x34);
+            code_output.push_back(regs[dst]);
+            code_output.push_back(1); // DS
+        }
+        // MOV reg, SS
+        else if (src == "SS") {
+            code_output.push_back(0x34);
+            code_output.push_back(regs[dst]);
+            code_output.push_back(2); // SS
+        }
+        // MOV reg, #imm или MOV reg, label
+        else if (src[0] == '#' || src[0] == '\'')
         {
             code_output.push_back(0x01);
             code_output.push_back(regs[dst]);
@@ -76,6 +113,7 @@ void tasm::assemble_line(const std::string &line)
             code_output.push_back((val >> 16) & 0xFF);
             code_output.push_back((val >> 24) & 0xFF);
         }
+        // MOV reg, label
         else if (labels.count(src))
         {
             code_output.push_back(0x01);
@@ -86,6 +124,7 @@ void tasm::assemble_line(const std::string &line)
             code_output.push_back((val >> 16) & 0xFF);
             code_output.push_back((val >> 24) & 0xFF);
         }
+        // MOV reg, локальная_метка
         else if (!current_global_label.empty() && labels.count(current_global_label + src))
         {
             code_output.push_back(0x01);
@@ -96,6 +135,7 @@ void tasm::assemble_line(const std::string &line)
             code_output.push_back((val >> 16) & 0xFF);
             code_output.push_back((val >> 24) & 0xFF);
         }
+        // MOV reg, reg
         else if (regs.count(src))
         {
             code_output.push_back(0x02);
@@ -275,7 +315,6 @@ void tasm::assemble_line(const std::string &line)
         else
             addr = safe_stoi(arg);
         code_output.push_back(0x15);
-        code_output.push_back(0); // seg
         code_output.push_back(addr & 0xFF);
         code_output.push_back((addr >> 8) & 0xFF);
         code_output.push_back((addr >> 16) & 0xFF);
@@ -460,7 +499,7 @@ void tasm::assemble_file(const std::string &path)
     for (size_t i = 0; i < lines.size(); i++)
         validate(lines[i], static_cast<int>(i) + 1);
     if (error_count > 0) return;
-
+    errors.push_back("DEBUG: org search, lines=" + std::to_string(lines.size()));
     // Читаем org
     for (const auto &ln : lines)
     {
@@ -474,7 +513,7 @@ void tasm::assemble_file(const std::string &path)
             break;
         }
     }
-
+        errors.push_back("DEBUG: org_addr=" + std::to_string(org_addr));
     // Первый проход: считаем размеры и собираем метки
     Section current = Section::None;
     uint32_t code_size = 0;
@@ -714,8 +753,11 @@ int tasm::instruction_size(const std::string &line) const
         std::istringstream tmp(line);
         tmp >> m >> dst >> src;
         src = clean_token(src);
-        if (regs.count(src)) return 3;       // MOV reg, reg
-        return 6;                             // MOV reg, imm/label
+        dst = clean_token(dst);
+        if (dst == "CS" || dst == "DS" || dst == "SS") return 3;
+        if (src == "CS" || src == "DS" || src == "SS") return 3;
+        if (regs.count(src)) return 3;
+        return 6;
     }
     if (mnemonic == "SHL" || mnemonic == "SHR" || mnemonic == "MUL" ||
         mnemonic == "DIV" || mnemonic == "ADC" || mnemonic == "SBB" ||
@@ -927,10 +969,10 @@ bool tasm::validate(const std::string& line, int line_num)
         std::string arg;
         iss >> arg;
         int addr = safe_stoi(arg);
-        if (addr < 0x10000)
+        if (addr < 0x000400)
         {
             errors.push_back(
-                "Line " + std::to_string(line_num) + ": org address too low, minimum is 0x10000 (RAM start)");
+                "Line " + std::to_string(line_num) + ": org address too low, minimum is 0x000400 (RAM start)");
             error_count++;
             return false;
         }

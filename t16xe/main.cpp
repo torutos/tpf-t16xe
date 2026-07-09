@@ -31,6 +31,11 @@ int main(int argc, char* argv[]) {
     t16xe cpu;
     load_toru(cpu, file);
     cpu.reset();
+    // cpu.output_callback = [](char c) {
+    //     std::cout << c;
+    //     std::cout.flush();
+    // };
+    // std::cout << "Reset done, PC=0x" << std::hex << cpu.PC << " CS=0x" << cpu.CS << "\n";
     cpu.run();
     return 0;
 }
