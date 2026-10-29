@@ -16,7 +16,6 @@ bool t16xe::execute(uint8_t opcode)
             auto reg = decode_reg(); // читаем код регистра
             auto val = decode_imm32(); // читаем 16-битное значение
             write_reg(reg, val);
-            update_flags(val);
             break;
         }
     case MOV_REG_REG:
@@ -25,7 +24,6 @@ bool t16xe::execute(uint8_t opcode)
             auto src = decode_reg();
             auto val = read_reg(src);
             write_reg(dst, val);
-            update_flags(val);
             break;
         }
 
@@ -84,11 +82,12 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
 
-    case JMP: {
-            auto off = decode_imm32();   // 32-битный адрес
+    case JMP:
+        {
+            auto off = decode_imm32(); // 32-битный адрес
             PC = off;
             break;
-    }
+        }
 
     case PUSH_REG:
         {
@@ -113,7 +112,8 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
 
-    case MOV_REG_MEM: {
+    case MOV_REG_MEM:
+        {
             auto reg = decode_reg();
             auto off = decode_imm32();
             auto addr = phys_addr(DS, off);
@@ -121,15 +121,16 @@ bool t16xe::execute(uint8_t opcode)
             auto hi = memory[addr + 1];
             auto val = (hi << 8) | lo;
             write_reg(reg, val);
-            update_flags(val);
             break;
-    }
+        }
 
-    case MOV_MEM_REG: {
+    case MOV_MEM_REG:
+        {
             auto off = decode_imm32();
             auto reg = decode_reg();
             auto val = read_reg(reg);
-            if (off == 0x1FFFFF2) {
+            if (off == 0x1FFFFF2)
+            {
                 if (output_callback) output_callback(static_cast<char>(val & 0xFF));
                 else std::cout << static_cast<char>(val & 0xFF);
                 std::cout.flush();
@@ -139,7 +140,7 @@ bool t16xe::execute(uint8_t opcode)
             memory[addr] = val & 0xFF;
             memory[addr + 1] = val >> 8;
             break;
-    }
+        }
 
     case INC_REG:
         {
@@ -169,7 +170,6 @@ bool t16xe::execute(uint8_t opcode)
             auto hi = memory[addr + 1];
             auto val = (hi << 8) | lo;
             write_reg(dst, val);
-            update_flags(val);
             break;
         }
 
@@ -225,7 +225,8 @@ bool t16xe::execute(uint8_t opcode)
             flagC = (val & (1 << (shift - 1))) != 0; // последний выдвинутый бит
             break;
         }
-    case CALL: {
+    case CALL:
+        {
             auto off = decode_imm32();
 
             SP -= 2;
@@ -240,7 +241,7 @@ bool t16xe::execute(uint8_t opcode)
 
             PC = off;
             break;
-    }
+        }
     case RET:
         {
             auto addr = phys_addr(SS, SP);
@@ -319,7 +320,6 @@ bool t16xe::execute(uint8_t opcode)
             auto src = decode_reg();
             auto addr = phys_addr(DS, read_reg(src));
             write_reg(dst, memory[addr]); // только 1 байт, старший = 0
-            update_flags(memory[addr]);
             break;
         }
     case STB_MEMREG_REG:
@@ -401,19 +401,21 @@ bool t16xe::execute(uint8_t opcode)
             break;
         }
 
-    case LDB_REG_MEM: {
+    case LDB_REG_MEM:
+        {
             auto reg = decode_reg();
             auto off = decode_imm32();
             auto addr = phys_addr(DS, off);
             write_reg(reg, memory[addr]);
-            update_flags(memory[addr]);
             break;
-    }
-    case STB_MEM_REG: {
+        }
+    case STB_MEM_REG:
+        {
             auto off = decode_imm32();
             auto reg = decode_reg();
             auto val = read_reg(reg) & 0xFF;
-            if (off == 0x1FFFFF2) {
+            if (off == 0x1FFFFF2)
+            {
                 if (output_callback) output_callback(static_cast<char>(val & 0xFF));
                 else std::cout << static_cast<char>(val & 0xFF);
                 std::cout.flush();
@@ -422,7 +424,7 @@ bool t16xe::execute(uint8_t opcode)
             auto addr = phys_addr(DS, off);
             memory[addr] = val;
             break;
-    }
+        }
     case MOV_MEMREG_REG:
         {
             // 0x25
@@ -459,17 +461,22 @@ bool t16xe::execute(uint8_t opcode)
             flagC = (DX != 0);
             break;
         }
-    case DIV_REG_REG: {
+    case DIV_REG_REG:
+        {
             auto dst = decode_reg();
             auto src = decode_reg();
             uint16_t divisor = read_reg(src);
-            if (divisor == 0) { flagC = true; break; }
+            if (divisor == 0)
+            {
+                flagC = true;
+                break;
+            }
             uint16_t result = read_reg(dst) / divisor;
             write_reg(dst, result);
             update_flags(result);
             flagC = false;
             break;
-    }
+        }
     case NOT_REG:
         {
             auto reg = decode_reg();
@@ -555,28 +562,38 @@ bool t16xe::execute(uint8_t opcode)
         {
             break;
         }
-        case MOV_SEG_REG: {
-                auto seg = decode_reg();  // какой сегмент (0=CS, 1=DS, 2=SS)
-                auto reg = decode_reg();  // из какого регистра
-                uint16_t val = read_reg(reg);
-                switch (seg) {
-                case 0: CS = val; break;
-                case 1: DS = val; break;
-                case 2: SS = val; break;
-                }
+    case MOV_SEG_REG:
+        {
+            auto seg = decode_reg(); // какой сегмент (0=CS, 1=DS, 2=SS)
+            auto reg = decode_reg(); // из какого регистра
+            uint16_t val = read_reg(reg);
+            switch (seg)
+            {
+            case 0: CS = val;
                 break;
+            case 1: DS = val;
+                break;
+            case 2: SS = val;
+                break;
+            }
+            break;
         }
-        case MOV_REG_SEG: {
-                auto reg = decode_reg();  // куда
-                auto seg = decode_reg();  // откуда
-                uint16_t val = 0;
-                switch (seg) {
-                case 0: val = CS; break;
-                case 1: val = DS; break;
-                case 2: val = SS; break;
-                }
-                write_reg(reg, val);
+    case MOV_REG_SEG:
+        {
+            auto reg = decode_reg(); // куда
+            auto seg = decode_reg(); // откуда
+            uint16_t val = 0;
+            switch (seg)
+            {
+            case 0: val = CS;
                 break;
+            case 1: val = DS;
+                break;
+            case 2: val = SS;
+                break;
+            }
+            write_reg(reg, val);
+            break;
         }
     default:
         {

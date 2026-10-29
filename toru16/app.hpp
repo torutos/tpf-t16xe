@@ -135,7 +135,7 @@ struct Toru16App {
         }
         terminalOutput += "Not found: " + name + "\n";
     }
-
+// TODO: delete writeFileToDisk
     void writeFileToDisk(const std::string& hostPath) {
         if (!diskLoaded) { terminalOutput += "No disk\n"; return; }
         std::ifstream src(hostPath, std::ios::binary);
