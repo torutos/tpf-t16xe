@@ -249,7 +249,7 @@ bool t16xe::execute(uint8_t opcode)
             SP += 2;
 
             addr = phys_addr(SS, SP);
-            CS = memory[addr]; // потом CS
+            CS = memory[addr] | (memory[addr+1] << 8);
             SP += 2;
             break;
         }
@@ -374,12 +374,12 @@ bool t16xe::execute(uint8_t opcode)
 
             // Восстанавливаем CS
             addr = phys_addr(SS, SP);
-            CS = memory[addr];
+            CS = memory[addr] | (memory[addr + 1] << 8);
             SP += 2;
 
             // Восстанавливаем флаги
             addr = phys_addr(SS, SP);
-            uint8_t flags = memory[addr];
+            uint16_t flags = memory[addr] | (memory[addr + 1] << 8);
             flagC = flags & 1;
             flagZ = flags & 2;
             flagN = flags & 4;
@@ -506,7 +506,7 @@ bool t16xe::execute(uint8_t opcode)
     case POPF:
         {
             auto addr = phys_addr(SS, SP);
-            uint8_t flags = memory[addr];
+            uint16_t flags = memory[addr] | (memory[addr + 1] << 8);
             flagC = flags & 1;
             flagZ = flags & 2;
             flagN = flags & 4;

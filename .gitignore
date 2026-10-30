@@ -2,3 +2,4 @@ build/
 *.toru
 .idea/
 imgui.ini
+.obsidian/
