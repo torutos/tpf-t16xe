@@ -4,28 +4,27 @@ A fully custom 16-bit processor emulator written in C++17, featuring its own ins
 
 ## ⚠️ Work in Progress
 
-This emulator is still under active development. Things that may go wrong:
+This emulator is still under active development. We are currently performing a large-scale refactoring of the core to fix known bugs, improve stability, and prepare for the first release.
 
+Things that may go wrong right now:
 - Some instructions are missing or may work incorrectly.
-- Interrupts and I/O ports are not fully wired up — keyboard input may not work as expected.
+- Interrupts and I/O ports are being stabilized — keyboard input may not work as expected.
 - Programs that run fine today might break after an update.
 - You may encounter crashes, freezes, or unexpected behavior.
 
-These issues are being worked on. The goal is to stabilize the instruction set and complete the I/O subsystem before the first release.
-
-If something doesn't work, please report it in [Issues](https://github.com/torutos/tpf-t16xe/issues). If you'd rather wait for a polished version, the first release is on the way.
+If something doesn't work, please report it in [Issues](https://github.com/torutos/tpf-t16xe/issues).
 
 ## Features
 
 ### CPU Emulator
-- 1 MB addressable memory space
+- 32 MB addressable memory space
 - 5 general-purpose 16-bit registers: AX, BX, CX, DX, SP
 - Segment registers: CS (code), DS (data), SS (stack)
 - Flags: Carry (C), Zero (Z), Negative (N), Overflow (O), Interrupt Disable (I)
 - Hardware interrupts (keyboard via port 0xFFF0/0xFFF1)
-- Software interrupts (INT instruction, vector table at 0x0000-0x03FF)
-- Stack operations (PUSH, POP, CALL, RET)
-- I/O ports for character output (0xFFF2)
+- Software interrupts (INT instruction, vector table at 0x10000-0x103FF)
+- Stack operations (PUSH, POP, CALL, RET — far calls supported)
+- I/O ports for character output (0x1FFFFF2)
 
 ### Assembler (TASM)
 - Two-pass assembler with label resolution
@@ -53,6 +52,17 @@ If something doesn't work, please report it in [Issues](https://github.com/torut
 - Output callback support for custom frontends
 - Input callback support for keyboard-driven programs
 
+## Documentation & Development
+
+We have started improving the project's documentation to make it easier to understand, contribute, and track progress. 
+
+- **`docs/`** — Project documentation, design notes, and architecture decisions.
+- **`docs/TODO.md`** — Known bugs, planned features, and technical debt. 
+- **`docs/opcodes.md`** — Instruction set reference and opcode map.
+- **Bugfixes & History** — We are actively fixing core bugs (e.g., stack symmetry, far calls, flag updates). The commit history and the `TODO` list are the primary sources of truth for what has been fixed and what is still pending.
+
+*(More detailed design documents will be added as the refactoring progresses.)*
+
 ## Building
 
 ```bash
@@ -62,7 +72,7 @@ cmake --build build
 
 Requirements: C++17, CMake 3.16+, OpenGL (for GUI). All dependencies (ImGui, GLFW) are fetched automatically.
 
-Usage
+## Usage
 
 ```bash
 # CLI: assemble and run
@@ -74,11 +84,11 @@ tpsgui
 
 Examples: [tests](tests)
 
-Links
+## Links
 
 · Discord: https://discord.gg/wSbqFkRtE
 · Telegram: https://t.me/hobnchkn
 
-License
+## License
 
 AGPL-3.0
