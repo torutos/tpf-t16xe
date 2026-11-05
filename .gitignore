@@ -3,3 +3,4 @@ build/
 .idea/
 imgui.ini
 .obsidian/
+bin
