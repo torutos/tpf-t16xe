@@ -77,3 +77,41 @@ void t16xe::update_flags(uint16_t val)
     flagZ = (val == 0);
     flagN = (val & 0x8000) != 0;
 }
+
+void t16xe::push16(uint16_t val)
+{
+    SP -= 2;
+    auto addr = phys_addr(SS, SP);
+    memory[addr] = val & 0xFF;
+    memory[addr + 1] = val >> 8;
+}
+
+uint16_t t16xe::pop16()
+{
+    auto addr = phys_addr(SS, SP);
+    auto lo = memory[addr];
+    auto hi = memory[addr + 1];
+    uint16_t value =(hi << 8) | lo;
+    SP += 2;
+    return value;
+}
+
+uint16_t t16xe::pack_flags() const
+{
+    uint16_t f = 0;
+    if (flagC) f |= 1;
+    if (flagZ) f |= 2;
+    if (flagN) f |= 4;
+    if (flagO) f |= 8;
+    if (flagI) f |= 16;
+    return f;
+}
+
+void t16xe::unpack_flags(uint16_t f)
+{
+    flagC = f & 1;
+    flagZ = f & 2;
+    flagN = f & 4;
+    flagO = f & 8;
+    flagI = f & 16;
+}

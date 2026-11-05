@@ -110,4 +110,9 @@ private:
     void write_reg(uint16_t reg, uint16_t val);
     [[nodiscard]] uint16_t read_reg(uint16_t reg) const;
     void update_flags(uint16_t val);
+    void push16(uint16_t val);
+    uint16_t pop16();
+    uint16_t pack_flags() const;
+    void unpack_flags(uint16_t f);
+
 };

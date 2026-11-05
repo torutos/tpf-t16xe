@@ -92,23 +92,14 @@ bool t16xe::execute(uint8_t opcode)
     case PUSH_REG:
         {
             auto reg = decode_reg();
-            auto val = read_reg(reg);
-            SP -= 2;
-            auto addr = phys_addr(SS, SP);
-            memory[addr] = val & 0xFF;
-            memory[addr + 1] = val >> 8;
+            push16(read_reg(reg));
             break;
         }
 
     case POP_REG:
         {
             auto reg = decode_reg();
-            auto addr = phys_addr(SS, SP);
-            auto lo = memory[addr];
-            auto hi = memory[addr + 1];
-            auto val = (hi << 8) | lo;
-            SP += 2;
-            write_reg(reg, val);
+            write_reg(reg, pop16());
             break;
         }
 
@@ -228,29 +219,19 @@ bool t16xe::execute(uint8_t opcode)
     case CALL:
         {
             auto off = decode_imm32();
+            uint16_t new_cs = (off >> 16) & 0xFFFF;
+            uint16_t new_pc = off & 0xFFFF;
+            push16(CS);
+            push16(PC);
 
-            SP -= 2;
-            auto addr = phys_addr(SS, SP);
-            memory[addr] = CS & 0xFF;
-            memory[addr + 1] = (CS >> 8) & 0xFF;
-
-            SP -= 2;
-            addr = phys_addr(SS, SP);
-            memory[addr] = PC & 0xFF;
-            memory[addr + 1] = (PC >> 8) & 0xFF;
-
-            PC = off;
+            CS = new_cs;
+            PC = new_pc;
             break;
         }
     case RET:
         {
-            auto addr = phys_addr(SS, SP);
-            PC = memory[addr] | (memory[addr + 1] << 8); // сначала PC
-            SP += 2;
-
-            addr = phys_addr(SS, SP);
-            CS = memory[addr] | (memory[addr+1] << 8);
-            SP += 2;
+            PC = pop16();
+            CS = pop16();
             break;
         }
     case ADD_REG_IMM:
@@ -496,23 +477,12 @@ bool t16xe::execute(uint8_t opcode)
         }
     case PUSHF:
         {
-            uint8_t flags = (flagC ? 1 : 0) | (flagZ ? 2 : 0) | (flagN ? 4 : 0) | (flagO ? 8 : 0) | (flagI ? 16 : 0);
-            SP -= 2;
-            auto addr = phys_addr(SS, SP);
-            memory[addr] = flags;
-            memory[addr + 1] = 0;
+            push16(pack_flags());
             break;
         }
     case POPF:
         {
-            auto addr = phys_addr(SS, SP);
-            uint16_t flags = memory[addr] | (memory[addr + 1] << 8);
-            flagC = flags & 1;
-            flagZ = flags & 2;
-            flagN = flags & 4;
-            flagO = flags & 8;
-            flagI = flags & 16;
-            SP += 2;
+            unpack_flags(pop16());
             break;
         }
     case ADC_REG_REG:
