@@ -203,7 +203,7 @@ bool t16xe::execute(uint8_t opcode)
             auto result = val << shift;
             write_reg(dst, result);
             update_flags(result);
-            flagC = (val & (1 << (16 - shift))) != 0; // последний выдвинутый бит
+            flagC = (shift > 0)? ((val & (1 << (16 - shift))) != 0) : false; // последний выдвинутый бит
             break;
         }
     case SHR_REG_REG:
@@ -215,7 +215,7 @@ bool t16xe::execute(uint8_t opcode)
             auto result = val >> shift;
             write_reg(dst, result);
             update_flags(result);
-            flagC = (val & (1 << (shift - 1))) != 0; // последний выдвинутый бит
+            flagC = (shift > 0) ? ((val & (1 << (shift - 1))) != 0) : false; // последний выдвинутый бит
             break;
         }
     case CALL:
