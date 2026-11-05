@@ -6,7 +6,7 @@
 
 enum : uint8_t {
     HLT = 0x00,         // останов
-    MOV_REG_IMM = 0x01, // MOV reg, #imm16
+    MOV_REG_IMM = 0x01, // MOV reg, #imm32
     MOV_REG_REG = 0x02, // MOV reg, reg
     ADD_REG_REG = 0x03, // ADD reg, reg
     SUB_REG_REG = 0x04, // SUB reg, reg

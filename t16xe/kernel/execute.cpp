@@ -31,13 +31,14 @@ bool t16xe::execute(uint8_t opcode)
         {
             auto dst = decode_reg();
             auto src = decode_reg();
-            auto a = read_reg(dst);
-            auto b = read_reg(src);
-            auto result = a + b;
+            uint16_t a = read_reg(dst);
+            uint16_t b = read_reg(src);
+            uint32_t full_result = (uint32_t)a + b; // Считаем в 32 битах
+            uint16_t result = (uint16_t)(full_result & 0xFFFF); // Обрезаем для записи
             write_reg(dst, result);
             update_flags(result);
-            flagC = (result < a); // перенос
-            flagO = ((a ^ result) & (b ^ result) & 0x8000) != 0; // переполнение
+            flagC = (full_result > 0xFFFF); // перенос
+            flagO = ((a ^ result) & (b ^ result) & 0x8000) != 0;
             break;
         }
 
@@ -45,12 +46,14 @@ bool t16xe::execute(uint8_t opcode)
         {
             auto dst = decode_reg();
             auto src = decode_reg();
-            auto a = read_reg(dst);
-            auto b = read_reg(src);
-            auto result = a - b;
+            uint16_t a = read_reg(dst);
+            uint16_t b = read_reg(src);
+            uint32_t full_sub = (uint32_t)a - b;
+            uint16_t result = (uint16_t)(full_sub & 0xFFFF);
             write_reg(dst, result);
             update_flags(result);
-            flagC = (a >= b); // заём инвертирован
+            flagC = (full_sub > 0xFFFF); // заём
+            flagO = ((a ^ b) & (a ^ result) & 0x8000) != 0;
             break;
         }
 
@@ -58,11 +61,13 @@ bool t16xe::execute(uint8_t opcode)
         {
             auto a_reg = decode_reg();
             auto b_reg = decode_reg();
-            auto a = read_reg(a_reg);
-            auto b = read_reg(b_reg);
-            auto result = a - b;
+            uint16_t a = read_reg(a_reg);
+            uint16_t b = read_reg(b_reg);
+            uint32_t full_sub = (uint32_t)a - b;
+            uint16_t result = (uint16_t)(full_sub & 0xFFFF);
             update_flags(result);
-            flagC = (a >= b);
+            flagC = (full_sub > 0xFFFF);
+            flagO = ((a ^ b) & (a ^ result) & 0x8000) != 0;
             break;
         }
 
@@ -203,7 +208,7 @@ bool t16xe::execute(uint8_t opcode)
             auto result = val << shift;
             write_reg(dst, result);
             update_flags(result);
-            flagC = (shift > 0)? ((val & (1 << (16 - shift))) != 0) : false; // последний выдвинутый бит
+            flagC = (shift > 0) ? ((val & (1 << (16 - shift))) != 0) : false; // последний выдвинутый бит
             break;
         }
     case SHR_REG_REG:
@@ -239,31 +244,39 @@ bool t16xe::execute(uint8_t opcode)
     case ADD_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm32();
-            auto result = read_reg(reg) + imm;
+            uint16_t a = read_reg(reg);
+            uint32_t imm = decode_imm32();
+            uint32_t full_result = (uint32_t)a + imm;
+            auto result = (uint16_t)(full_result & 0xFFFF);
             write_reg(reg, result);
             update_flags(result);
-            flagC = (result < read_reg(reg));
+            flagC = (full_result > 0xFFFF); // <--- ВОТ ТАК
+            flagO = ((a ^ result) & (imm ^ result) & 0x8000) != 0;
             break;
         }
     case SUB_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm32();
-            auto a = read_reg(reg);
-            auto result = a - imm;
+            uint16_t a = read_reg(reg);
+            uint32_t imm = decode_imm32();
+            uint32_t full_sub = (uint32_t)a - imm;
+            auto result = (uint16_t)(full_sub & 0xFFFF);
             write_reg(reg, result);
             update_flags(result);
-            flagC = (a >= imm);
+            flagC = (full_sub > 0xFFFF); // или (a >= imm)
+            flagO = ((a ^ imm) & (a ^ result) & 0x8000) != 0;
             break;
         }
     case CMP_REG_IMM:
         {
             auto reg = decode_reg();
-            auto imm = decode_imm32();
-            auto result = read_reg(reg) - imm;
+            uint16_t a = read_reg(reg);
+            uint32_t imm = decode_imm32();
+            uint32_t full_sub = (uint32_t)a - imm;
+            uint16_t result = (uint16_t)(full_sub & 0xFFFF);
             update_flags(result);
-            flagC = (read_reg(reg) >= imm);
+            flagC = (full_sub > 0xFFFF);
+            flagO = ((a ^ imm) & (a ^ result) & 0x8000) != 0;
             break;
         }
     case AND_REG_IMM:
@@ -491,21 +504,32 @@ bool t16xe::execute(uint8_t opcode)
         {
             auto dst = decode_reg();
             auto src = decode_reg();
-            auto result = read_reg(dst) + read_reg(src) + (flagC ? 1 : 0);
+            uint16_t a = read_reg(dst);
+            uint16_t b = read_reg(src);
+            uint32_t carry = flagC ? 1 : 0;
+            uint32_t full_result = (uint32_t)a + b + carry;
+            auto result = (uint16_t)(full_result & 0xFFFF);
             write_reg(dst, result);
             update_flags(result);
-            flagC = (result < read_reg(dst));
+            flagC = (full_result > 0xFFFF);
+            // flagO для ADC считается так же, как для ADD
+            flagO = ((a ^ result) & (b ^ result) & 0x8000) != 0;
             break;
         }
     case SBB_REG_REG:
         {
             auto dst = decode_reg();
             auto src = decode_reg();
-            auto a = read_reg(dst);
-            auto result = a - read_reg(src) - (flagC ? 1 : 0);
+            uint16_t a = read_reg(dst);
+            uint16_t b = read_reg(src);
+            uint32_t borrow = flagC ? 1 : 0;
+            uint32_t full_sub = (uint32_t)a - b - borrow;
+            auto result = (uint16_t)(full_sub & 0xFFFF);
             write_reg(dst, result);
             update_flags(result);
-            flagC = (a >= read_reg(src) + (flagC ? 1 : 0));
+            // Если full_sub ушёл в минус (в 32-битном беззнаковом это огромное число), значит был заём
+            flagC = (full_sub > 0xFFFF); // или (a < b + borrow), что то же самое
+            flagO = ((a ^ b) & (a ^ result) & 0x8000) != 0;
             break;
         }
     case TEST_REG_REG:
