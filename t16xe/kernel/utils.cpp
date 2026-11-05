@@ -8,7 +8,15 @@ uint32_t t16xe::phys_addr(uint16_t seg, uint16_t offset)
 }
 
 
-uint16_t t16xe::decode_reg() { return memory[phys_addr(CS, PC++)]; }
+uint16_t t16xe::decode_reg() {
+    uint8_t reg = memory[phys_addr(CS, PC++)];
+    if (reg >= 5) { // У тебя 5 регистров: AX, BX, CX, DX, SP
+        std::cerr << "Runtime error: invalid register code 0x" << std::hex << (int)reg
+                  << " at PC=0x" << std::hex << (PC - 1) << "\n";
+        std::abort();
+    }
+    return reg;
+}
 
 uint16_t t16xe::decode_imm16()
 {
@@ -50,7 +58,8 @@ void t16xe::write_reg(const uint16_t reg, const uint16_t val)
         SP = val;
         break;
     default:
-        break;
+        std::cerr << "Runtime error: unknown register 0x" << std::hex << reg << "\n";
+        std::abort();
     }
 }
 uint16_t t16xe::read_reg(const uint16_t reg) const
@@ -68,7 +77,8 @@ uint16_t t16xe::read_reg(const uint16_t reg) const
     case REG_SP:
         return SP;
     default:
-        return 0;
+        std::cerr << "Runtime error: unknown register 0x" << std::hex << reg << "\n";
+        std::abort();
     }
 }
 
