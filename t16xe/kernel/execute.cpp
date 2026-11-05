@@ -177,6 +177,7 @@ bool t16xe::execute(uint8_t opcode)
             write_reg(dst, result);
             update_flags(result);
             flagC = false;
+            flagO = false;
             break;
         }
     case OR_REG_REG:
@@ -187,6 +188,7 @@ bool t16xe::execute(uint8_t opcode)
             write_reg(dst, result);
             update_flags(result);
             flagC = false;
+            flagO = false;
             break;
         }
     case XOR_REG_REG:
@@ -197,6 +199,7 @@ bool t16xe::execute(uint8_t opcode)
             write_reg(dst, result);
             update_flags(result);
             flagC = false;
+            flagO = false;
             break;
         }
     case SHL_REG_REG:
