@@ -13,7 +13,7 @@ uint16_t t16xe::decode_reg() {
     if (reg >= 5) { // У тебя 5 регистров: AX, BX, CX, DX, SP
         std::cerr << "Runtime error: invalid register code 0x" << std::hex << (int)reg
                   << " at PC=0x" << std::hex << (PC - 1) << "\n";
-        std::abort();
+        error_callback("Invalid register code");
     }
     return reg;
 }
@@ -59,7 +59,7 @@ void t16xe::write_reg(const uint16_t reg, const uint16_t val)
         break;
     default:
         std::cerr << "Runtime error: unknown register 0x" << std::hex << reg << "\n";
-        std::abort();
+        error_callback("Invalid register code");
     }
 }
 uint16_t t16xe::read_reg(const uint16_t reg) const
@@ -78,7 +78,7 @@ uint16_t t16xe::read_reg(const uint16_t reg) const
         return SP;
     default:
         std::cerr << "Runtime error: unknown register 0x" << std::hex << reg << "\n";
-        std::abort();
+        error_callback("Invalid register code");
     }
 }
 

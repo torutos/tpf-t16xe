@@ -31,7 +31,10 @@ struct Toru16App {
             terminalOutput += c;
             outputUpdated = true;
         };
-
+        cpu.error_callback = [this](const std::string& msg) {
+            terminalOutput += "CPU Error: " + msg + "\n";
+            running = false; // останавливаем выполнение, но не крашим GUI
+        };
         std::ifstream biosFile("bios.toru", std::ios::binary);
         if (biosFile) {
             uint32_t dsize = biosFile.get() | (biosFile.get() << 8) | (biosFile.get() << 16) | (biosFile.get() << 24);

@@ -92,9 +92,15 @@ struct t16xe {
     static constexpr uint32_t RAM_END = 0x01FFEFFF;      // конец ОЗУ
     static constexpr uint32_t STACK_TOP = 0x01FFEFFF;    // вершина стека
 
-    t16xe() : memory(MEMORY_SIZE) {}
+    t16xe() : memory(MEMORY_SIZE) {
+        error_callback = [](const std::string& msg) {
+            std::cerr << "Fatal CPU error: " << msg << "\n";
+            std::abort();
+        };
+    }
     std::function<void(char)> output_callback;
     std::function<int()> input_callback;
+    std::function<void(const std::string&)> error_callback;
     void reset();
     void run();
     [[nodiscard]] static uint32_t phys_addr(uint16_t seg, uint16_t offset);
