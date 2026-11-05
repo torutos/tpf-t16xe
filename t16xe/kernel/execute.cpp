@@ -547,6 +547,9 @@ bool t16xe::execute(uint8_t opcode)
                 break;
             case 2: SS = val;
                 break;
+            default:
+                std::cerr << "Runtime error: invalid segment code " << seg << "\n";
+                error_callback("Invalid segment code");
             }
             break;
         }
@@ -563,6 +566,9 @@ bool t16xe::execute(uint8_t opcode)
                 break;
             case 2: val = SS;
                 break;
+            default:
+                std::cerr << "Runtime error: invalid segment code " << seg << "\n";
+                error_callback("Invalid segment code");
             }
             write_reg(reg, val);
             break;
