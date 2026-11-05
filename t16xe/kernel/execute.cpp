@@ -171,6 +171,7 @@ bool t16xe::execute(uint8_t opcode)
             auto result = read_reg(dst) & read_reg(src);
             write_reg(dst, result);
             update_flags(result);
+            flagC = false;
             break;
         }
     case OR_REG_REG:
@@ -180,6 +181,7 @@ bool t16xe::execute(uint8_t opcode)
             auto result = read_reg(dst) | read_reg(src);
             write_reg(dst, result);
             update_flags(result);
+            flagC = false;
             break;
         }
     case XOR_REG_REG:
