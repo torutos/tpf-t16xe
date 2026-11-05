@@ -89,8 +89,12 @@ bool t16xe::execute(uint8_t opcode)
 
     case JMP:
         {
-            auto off = decode_imm32(); // 32-битный адрес
-            PC = off;
+            auto off = decode_imm32();
+            uint16_t new_cs = (off >> 16) & 0xFFFF;
+            uint16_t new_pc = off & 0xFFFF;
+
+            CS = new_cs;
+            PC = new_pc;
             break;
         }
 
@@ -333,58 +337,27 @@ bool t16xe::execute(uint8_t opcode)
     case SOFTWARE_INT:
         {
             auto vector = decode_imm8();
-            uint8_t flags = (flagC ? 1 : 0) | (flagZ ? 2 : 0) | (flagN ? 4 : 0) |
-                (flagO ? 8 : 0) | (flagI ? 16 : 0);
-            SP -= 2;
-            auto addr = phys_addr(SS, SP);
-            memory[addr] = flags;
-            memory[addr + 1] = 0;
 
-            // Сохраняем CS
-            SP -= 2;
-            addr = phys_addr(SS, SP);
-            memory[addr] = CS;
-            memory[addr + 1] = 0;
-            // Сохраняем PC
-            SP -= 2;
-            addr = phys_addr(SS, SP);
-            memory[addr] = PC & 0xFF;
-            memory[addr + 1] = PC >> 8;
+            // Сохраняем контекст (флаги, CS, PC) — по 2 байта!
+            push16(pack_flags());
+            push16(CS);
+            push16(PC);
 
-            // Запрещаем прерывания
-            flagI = true;
+            flagI = true; // Запрещаем прерывания
 
-            // Читаем вектор из таблицы (первые 1024 байта памяти)
-            uint32_t vec_addr = vector * 4;
-            uint16_t new_ip = memory[vec_addr] | (memory[vec_addr + 1] << 8);
-            uint8_t new_cs = memory[vec_addr + 2];
+            // Читаем вектор из таблицы (база 0x10000)
+            uint32_t vec_addr = 0x10000 + vector * 4;
+            PC = memory[vec_addr] | (memory[vec_addr + 1] << 8);
+            CS = memory[vec_addr + 2] | (memory[vec_addr + 3] << 8);
 
-            // Прыгаем на обработчик
-            CS = new_cs;
-            PC = new_ip;
             break;
         }
 
     case IRET:
         {
-            auto addr = phys_addr(SS, SP);
-            PC = memory[addr] | (memory[addr + 1] << 8);
-            SP += 2;
-
-            // Восстанавливаем CS
-            addr = phys_addr(SS, SP);
-            CS = memory[addr] | (memory[addr + 1] << 8);
-            SP += 2;
-
-            // Восстанавливаем флаги
-            addr = phys_addr(SS, SP);
-            uint16_t flags = memory[addr] | (memory[addr + 1] << 8);
-            flagC = flags & 1;
-            flagZ = flags & 2;
-            flagN = flags & 4;
-            flagO = flags & 8;
-            flagI = flags & 16;
-            SP += 2;
+            PC = pop16();
+            CS = pop16();
+            unpack_flags(pop16());
             break;
         }
 
