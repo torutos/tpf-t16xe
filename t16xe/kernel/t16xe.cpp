@@ -12,7 +12,8 @@ void t16xe::reset() {
 
     // Вектор сброса в конце 32 МБ
     uint32_t vec = 0x1FFFFF4;
-    uint32_t lo = memory[vec] | (memory[vec+1]<<8) | (memory[vec+2]<<16) | (memory[vec+3]<<24);
+    uint32_t lo = (uint32_t)memory[vec] | ((uint32_t)memory[vec+1] << 8) |
+              ((uint32_t)memory[vec+2] << 16) | ((uint32_t)memory[vec+3] << 24);
     CS = (lo >> 16) & 0xFFFF;
     PC = lo & 0xFFFF;
 }

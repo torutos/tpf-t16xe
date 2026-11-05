@@ -3,7 +3,12 @@
 uint32_t t16xe::phys_addr(uint16_t seg, uint16_t offset)
 {
     uint32_t addr = ((uint32_t)seg << 16) | offset;
-    if (addr >= 0x1FFFFF0) return addr; // порты
+    if (addr >= MEMORY_SIZE) {
+        // Тут надо вызвать ошибку. Пока можешь использовать std::cerr + abort,
+        // или тот самый error_callback.
+        std::cerr << "Runtime error: memory access out of bounds at 0x" << std::hex << addr << "\n";
+        std::abort();
+    }
     return addr;
 }
 
