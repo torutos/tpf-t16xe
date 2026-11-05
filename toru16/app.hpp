@@ -113,6 +113,10 @@ struct Toru16App {
         for (auto& f : files) {
             if (f.name == name) {
                 std::ifstream file(diskPath, std::ios::binary);
+                if (f.offset + f.size > diskSize || f.size < 16) {
+                    terminalOutput += "Error: invalid file size/offset in disk table\n";
+                    return;
+                }
                 file.seekg(f.offset);
                 std::vector<uint8_t> data(f.size);
                 file.read(reinterpret_cast<char*>(data.data()), f.size);
@@ -154,7 +158,11 @@ struct Toru16App {
         size_t s = name.find_last_of("/\\");
         if (s != std::string::npos) name = name.substr(s+1);
         bool bootable = (name == "boot.toru");
-
+        constexpr uint32_t MAX_DISK_SIZE = 32 * 1024 * 1024; // 32 МБ
+        if (offset + size > MAX_DISK_SIZE) {
+            terminalOutput += "Error: disk full\n";
+            return;
+        }
         std::fstream disk(diskPath, std::ios::binary|std::ios::in|std::ios::out);
         disk.seekp(offset); disk.write(reinterpret_cast<char*>(data.data()), size);
 
@@ -166,6 +174,7 @@ struct Toru16App {
         disk.put(0); disk.put(0); disk.put(0); disk.put(0);
 
         files.push_back({name, size, offset, bootable});
+        if (offset + size > diskSize) diskSize = offset + size;
         terminalOutput += "Written: " + name + " (" + std::to_string(size) + " bytes)";
         if(bootable) terminalOutput += " [bootable]";
         terminalOutput += "\n";

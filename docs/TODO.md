@@ -40,8 +40,8 @@
 - [x] **JMP/CALL: обрезка 32-битного адреса в 16-битный PC.** Решить, как работает переход (линейно или сегментно).
 
 ### 7. Ядро: Мелочи
-- [ ] **MOV_SEG_REG / MOV_REG_SEG: switch без default.** Добавить обработку ошибки.
-- [ ] **SP = 0xFEEF (reset/execute) vs 0xFEFF (BIOS).** Привести к одному значению.
+- [x] **MOV_SEG_REG / MOV_REG_SEG: switch без default.** Добавить обработку ошибки.
+- [x] **SP = 0xFEEF (reset/execute) vs 0xFEFF (BIOS).** Привести к одному значению.
 
 ### 8. Диск (app.hpp)
 - [ ] **loadFromDisk: нет проверки границ.** `offset + size > diskSize` → выход за границу.
